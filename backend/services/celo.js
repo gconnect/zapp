@@ -1,6 +1,6 @@
 /**
  * Celo service — wraps viem for all blockchain interactions
- * Network: Alfajores testnet (chainId 44787)
+ * Network: Celo Sepolia testnet (chainId 11142220)
  */
 
 import { createPublicClient, createWalletClient, http, parseUnits, formatUnits, parseAbi } from 'viem';
@@ -14,16 +14,16 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 
 // ─── Chain Config ─────────────────────────────────────────────────────────────
 
-const celoAlfajores = {
-  id: 44787,
-  name: 'Celo Alfajores',
-  network: 'alfajores',
+const celoSepolia = {
+  id: 11142220,
+  name: 'Celo Sepolia',
+  network: 'celo-sepolia',
   nativeCurrency: { name: 'CELO', symbol: 'CELO', decimals: 18 },
   rpcUrls: {
-    default: { http: [process.env.CELO_RPC || 'https://alfajores-forno.celo-testnet.org'] }
+    default: { http: [process.env.CELO_RPC || 'https://forno.celo-sepolia.celo-testnet.org'] }
   },
   blockExplorers: {
-    default: { name: 'Celoscan', url: 'https://alfajores.celoscan.io' }
+    default: { name: 'Blockscout', url: 'https://celo-sepolia.blockscout.com' }
   }
 };
 
@@ -51,8 +51,8 @@ function loadABI(name) {
 
 export function getPublicClient() {
   return createPublicClient({
-    chain: celoAlfajores,
-    transport: http(process.env.CELO_RPC || 'https://alfajores-forno.celo-testnet.org')
+    chain: celoSepolia,
+    transport: http(process.env.CELO_RPC || 'https://forno.celo-sepolia.celo-testnet.org')
   });
 }
 
@@ -62,8 +62,8 @@ export function getWalletClient(privateKey) {
   return {
     client: createWalletClient({
       account,
-      chain: celoAlfajores,
-      transport: http(process.env.CELO_RPC || 'https://alfajores-forno.celo-testnet.org')
+      chain: celoSepolia,
+      transport: http(process.env.CELO_RPC || 'https://forno.celo-sepolia.celo-testnet.org')
     }),
     account
   };
@@ -105,6 +105,19 @@ export async function getCELOBalance(address) {
 
 // ─── Transfer ────────────────────────────────────────────────────────────────
 
+export async function sendCELO({ fromPrivateKey, toAddress, amountCelo }) {
+  const { client, account } = getWalletClient(fromPrivateKey);
+  const amountWei = parseUnits(String(amountCelo), 18);
+
+  const hash = await client.sendTransaction({
+    account,
+    to: toAddress,
+    value: amountWei
+  });
+
+  return { txHash: hash, explorerUrl: `https://celo-sepolia.blockscout.com/tx/${hash}` };
+}
+
 export async function sendCUSD({ fromPrivateKey, toAddress, amountCusd, memo = '' }) {
   const cusdAddress = process.env.CUSD_ADDRESS || '0xAd9a854784BD9e8e5E975e39cdFD34cA32dd7fEf';
   const { client, account } = getWalletClient(fromPrivateKey);
@@ -118,7 +131,7 @@ export async function sendCUSD({ fromPrivateKey, toAddress, amountCusd, memo = '
     args: [toAddress, amountWei]
   });
 
-  return { txHash: hash, explorerUrl: `https://alfajores.celoscan.io/tx/${hash}` };
+  return { txHash: hash, explorerUrl: `https://celo-sepolia.blockscout.com/tx/${hash}` };
 }
 
 export async function approveCUSD({ fromPrivateKey, spenderAddress, amountCusd }) {
@@ -157,7 +170,7 @@ export async function splitEqualOnChain({ fromPrivateKey, recipients, totalAmoun
     args: [cusdAddress, recipients, totalWei, memo]
   });
 
-  return { txHash: hash, explorerUrl: `https://alfajores.celoscan.io/tx/${hash}` };
+  return { txHash: hash, explorerUrl: `https://celo-sepolia.blockscout.com/tx/${hash}` };
 }
 
 // ─── EsusuCircle Contract ────────────────────────────────────────────────────
@@ -179,7 +192,7 @@ export async function contributeToCircle({ fromPrivateKey, contractCircleId, con
     args: [BigInt(contractCircleId)]
   });
 
-  return { txHash: hash, explorerUrl: `https://alfajores.celoscan.io/tx/${hash}` };
+  return { txHash: hash, explorerUrl: `https://celo-sepolia.blockscout.com/tx/${hash}` };
 }
 
 // ─── Transaction Receipt ─────────────────────────────────────────────────────
@@ -195,5 +208,5 @@ export async function waitForTransaction(txHash) {
 }
 
 export function getExplorerUrl(txHash) {
-  return `https://alfajores.celoscan.io/tx/${txHash}`;
+  return `https://celo-sepolia.blockscout.com/tx/${txHash}`;
 }
