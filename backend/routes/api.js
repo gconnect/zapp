@@ -264,9 +264,6 @@ router.get('/admin/transactions', adminAuth, async (req, res) => {
 
 router.get('/admin/users', adminAuth, (req, res) => {
   try {
-    const { filter = 'all' } = req.query;
-    const { getDB } = await import('../db/index.js').then(m => m);
-    // Inline query for flexibility
     res.json({ message: 'Use /admin/stats for summary' });
   } catch (err) {
     res.status(500).json({ error: err.message });
