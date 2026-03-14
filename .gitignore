@@ -1,0 +1,40 @@
+# Environment files - NEVER commit these
+.env
+.env.local
+.env.production
+**/.env
+**/.env.local
+
+# Private keys and secrets
+*.key
+*.pem
+secrets/
+
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Build artifacts
+contracts/artifacts/
+contracts/cache/
+contracts/typechain-types/
+
+# Database
+*.sqlite
+*.db
+
+# Hardhat
+contracts/deployments/hardhat.json
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# IDE
+.vscode/
+.idea/

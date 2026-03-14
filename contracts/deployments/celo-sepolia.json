@@ -1,0 +1,19 @@
+{
+  "network": "celo-sepolia",
+  "deployedAt": "2026-03-13T23:20:51.850Z",
+  "contracts": {
+    "EsusuCircle": {
+      "address": "0x118ec5a0eD69408a0DE7F85dA3ca3e27F27BFA2f",
+      "abi": "EsusuCircle.json"
+    },
+    "SplitPayment": {
+      "address": "0x6D9Aa4fF1bbdc6B5A330B121D2bBBB793F8AFD7f",
+      "abi": "SplitPayment.json"
+    },
+    "CeloPayRegistry": {
+      "address": "0xA19183281C0f34433CB14AA7372F647918894D49",
+      "abi": "CeloPayRegistry.json"
+    }
+  },
+  "cUSD": "local-mock"
+}

@@ -1,0 +1,73 @@
+{
+  "gateway": {
+    "port": 18789,
+    "host": "127.0.0.1",
+    "logLevel": "info"
+  },
+  "agents": {
+    "list": [
+      {
+        "id": "personal",
+        "workspace": "~/.openclaw/workspace-personal",
+        "description": "Personal assistant (Discord) + Admin oversight"
+      },
+      {
+        "id": "payment-app",
+        "workspace": "~/.openclaw/workspace-payment",
+        "description": "CeloPay user-facing Telegram bot"
+      },
+      {
+        "id": "admin",
+        "workspace": "~/.openclaw/workspace-admin",
+        "description": "CeloPay admin Telegram bot (you only)"
+      }
+    ]
+  },
+  "bindings": [
+    {
+      "agentId": "personal",
+      "match": {
+        "channel": "discord"
+      }
+    },
+    {
+      "agentId": "payment-app",
+      "match": {
+        "channel": "telegram",
+        "accountId": "celopaybot"
+      }
+    },
+    {
+      "agentId": "admin",
+      "match": {
+        "channel": "telegram",
+        "accountId": "celopayadminbot"
+      }
+    }
+  ],
+  "channels": {
+    "discord": {
+      "enabled": true,
+      "token": "YOUR_DISCORD_BOT_TOKEN"
+    },
+    "telegram": {
+      "enabled": true,
+      "accounts": [
+        {
+          "id": "celopaybot",
+          "botToken": "YOUR_CELOPAYBOT_TOKEN",
+          "dmPolicy": "open",
+          "groupPolicy": "enabled",
+          "streamMode": "partial"
+        },
+        {
+          "id": "celopayadminbot",
+          "botToken": "YOUR_ADMIN_BOT_TOKEN",
+          "dmPolicy": "allowlist",
+          "allowlist": ["YOUR_TELEGRAM_USER_ID"],
+          "streamMode": "partial"
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "name": "celopay-backend",
+  "version": "1.0.0",
+  "description": "CeloPay Node.js backend — webhooks, receipts, blockchain services",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "test": "node tests/backend.test.js",
+    "db:init": "node db/init.js"
+  },
+  "dependencies": {
+    "better-sqlite3": "^9.4.0",
+    "canvas": "^2.11.2",
+    "dotenv": "^16.4.0",
+    "express": "^4.18.0",
+    "pdfkit": "^0.14.0",
+    "qrcode": "^1.5.3",
+    "viem": "^2.17.0"
+  }
+}

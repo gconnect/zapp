@@ -1,0 +1,21 @@
+{
+  "name": "celopay-contracts",
+  "version": "1.0.0",
+  "description": "CeloPay smart contracts for Celo Alfajores testnet",
+  "scripts": {
+    "compile": "hardhat compile",
+    "test": "hardhat test",
+    "deploy": "hardhat run scripts/deploy.js --network alfajores",
+    "deploy:local": "hardhat run scripts/deploy.js --network hardhat",
+    "node": "hardhat node",
+    "clean": "hardhat clean"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^4.0.0",
+    "hardhat": "^2.22.0"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^5.0.0",
+    "dotenv": "^17.3.1"
+  }
+}
