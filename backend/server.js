@@ -98,8 +98,8 @@ async function start() {
     console.log(`║   CeloPay Backend Server                 ║`);
     console.log(`╚══════════════════════════════════════════╝`);
     console.log(`🚀 Running on http://localhost:${PORT}`);
-    console.log(`🌐 Network:  Celo Alfajores (chainId 44787)`);
-    console.log(`🗄️  Database: ${process.env.DB_PATH || './db/celopay.sqlite'}`);
+    console.log(`🌐 Network:  Celo Sepolia Testnet (chainId 11142220)`);
+    console.log(`🗄️  Database: ${process.env.DB_PATH || './db/zapp.sqlite'}`);
     console.log(`\nEndpoints:`);
     console.log(`  GET  /health`);
     console.log(`  POST /verify          ← Self Protocol webhook`);
