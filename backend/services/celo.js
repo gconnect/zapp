@@ -81,7 +81,7 @@ export function generateWallet() {
 
 export async function getCUSDBalance(address) {
   const client = getPublicClient();
-  const cusdAddress = process.env.CUSD_ADDRESS || '0x874069Fa1Eb16D44d622F2e0Ca25eeA172369bC1';
+  const cusdAddress = process.env.CUSD_ADDRESS || '0xAd9a854784BD9e8e5E975e39cdFD34cA32dd7fEf';
 
   const raw = await client.readContract({
     address: cusdAddress,
@@ -106,7 +106,7 @@ export async function getCELOBalance(address) {
 // ─── Transfer ────────────────────────────────────────────────────────────────
 
 export async function sendCUSD({ fromPrivateKey, toAddress, amountCusd, memo = '' }) {
-  const cusdAddress = process.env.CUSD_ADDRESS || '0x874069Fa1Eb16D44d622F2e0Ca25eeA172369bC1';
+  const cusdAddress = process.env.CUSD_ADDRESS || '0xAd9a854784BD9e8e5E975e39cdFD34cA32dd7fEf';
   const { client, account } = getWalletClient(fromPrivateKey);
   const amountWei = parseUnits(String(amountCusd), 18);
 
@@ -122,7 +122,7 @@ export async function sendCUSD({ fromPrivateKey, toAddress, amountCusd, memo = '
 }
 
 export async function approveCUSD({ fromPrivateKey, spenderAddress, amountCusd }) {
-  const cusdAddress = process.env.CUSD_ADDRESS || '0x874069Fa1Eb16D44d622F2e0Ca25eeA172369bC1';
+  const cusdAddress = process.env.CUSD_ADDRESS || '0xAd9a854784BD9e8e5E975e39cdFD34cA32dd7fEf';
   const { client, account } = getWalletClient(fromPrivateKey);
   const amountWei = parseUnits(String(amountCusd), 18);
 
@@ -141,7 +141,7 @@ export async function approveCUSD({ fromPrivateKey, spenderAddress, amountCusd }
 
 export async function splitEqualOnChain({ fromPrivateKey, recipients, totalAmountCusd, memo = '' }) {
   const splitAddress = process.env.SPLIT_PAYMENT_ADDRESS;
-  const cusdAddress = process.env.CUSD_ADDRESS || '0x874069Fa1Eb16D44d622F2e0Ca25eeA172369bC1';
+  const cusdAddress = process.env.CUSD_ADDRESS || '0xAd9a854784BD9e8e5E975e39cdFD34cA32dd7fEf';
   const abi = loadABI('SplitPayment');
   const { client, account } = getWalletClient(fromPrivateKey);
   const totalWei = parseUnits(String(totalAmountCusd), 18);
@@ -164,7 +164,7 @@ export async function splitEqualOnChain({ fromPrivateKey, recipients, totalAmoun
 
 export async function contributeToCircle({ fromPrivateKey, contractCircleId, contributionCusd }) {
   const esusuAddress = process.env.ESUSU_CIRCLE_ADDRESS;
-  const cusdAddress = process.env.CUSD_ADDRESS || '0x874069Fa1Eb16D44d622F2e0Ca25eeA172369bC1';
+  const cusdAddress = process.env.CUSD_ADDRESS || '0xAd9a854784BD9e8e5E975e39cdFD34cA32dd7fEf';
   const abi = loadABI('EsusuCircle');
   const { client, account } = getWalletClient(fromPrivateKey);
 

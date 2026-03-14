@@ -425,7 +425,7 @@ describe('x402 Payment Logic', () => {
         maxAmountRequired: String(Math.round(parseFloat(amount) * 1e6)),
         resource: resourcePath,
         payTo: recipientAddress,
-        asset: '0x874069Fa1Eb16D44d622F2e0Ca25eeA172369bC1'
+        asset: '0xAd9a854784BD9e8e5E975e39cdFD34cA32dd7fEf'
       }],
       error: 'Payment required'
     };
