@@ -95,7 +95,7 @@ async function start() {
 
   app.listen(PORT, () => {
     console.log(`\n╔══════════════════════════════════════════╗`);
-    console.log(`║   CeloPay Backend Server                 ║`);
+    console.log(`║   Zapp Backend Server                 ║`);
     console.log(`╚══════════════════════════════════════════╝`);
     console.log(`🚀 Running on http://localhost:${PORT}`);
     console.log(`🌐 Network:  Celo Sepolia Testnet (chainId 11142220)`);
