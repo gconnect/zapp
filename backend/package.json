@@ -13,7 +13,7 @@
   "dependencies": {
     "better-sqlite3": "^9.4.0",
     "canvas": "^2.11.2",
-    "dotenv": "^16.4.0",
+    "dotenv": "^16.6.1",
     "express": "^4.18.0",
     "pdfkit": "^0.14.0",
     "qrcode": "^1.5.3",

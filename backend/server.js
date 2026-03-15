@@ -40,7 +40,7 @@ app.get('/health', (req, res) => {
     status: 'ok',
     service: 'celopay-backend',
     timestamp: new Date().toISOString(),
-    network: 'celo-alfajores',
+    network: 'celo-sepolia',
     env: process.env.NODE_ENV || 'development'
   });
 });
