@@ -4,11 +4,10 @@
  */
 
 import { createPublicClient, createWalletClient, http, parseUnits, formatUnits, parseAbi } from 'viem';
-import { privateKeyToAccount } from 'viem/accounts';
+import { privateKeyToAccount, generatePrivateKey } from 'viem/accounts';
 import { readFileSync, existsSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
-import { generatePrivateKey } from 'viem/accounts';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
