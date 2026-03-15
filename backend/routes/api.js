@@ -4,7 +4,7 @@
  */
 
 import { Router } from 'express';
-import { getCUSDBalance, sendCUSD, splitEqualOnChain, generateWallet, waitForTransaction, getExplorerUrl } from '../services/celo.js';
+import { getCUSDBalance, sendCUSD, splitEqualOnChain, generateWallet, waitForTransaction, getExplorerUrl, getCELOBalance, sendCELO } from '../services/celo.js';
 import { generateReceiptPNG, generateReceiptPDF } from '../services/receipt.js';
 import { generateVerificationLink } from '../services/self.js';
 import { createCircle, joinCircle, contribute, getCircleStatus, getUserCircles } from '../services/esusu.js';
@@ -288,4 +288,75 @@ router.get('/admin/circles', adminAuth, async (req, res) => {
   }
 });
 
+// ─── CELO Native Balance ──────────────────────────────────────────────────────
+
+router.get('/celo/balance/:telegramId', async (req, res) => {
+  try {
+    const user = getUserByTelegramId(req.params.telegramId);
+    if (!user) return res.status(404).json({ error: 'User not found. Use /start to register.' });
+    if (!user.wallet_address) return res.status(400).json({ error: 'No wallet found.' });
+
+    const balance = await getCELOBalance(user.wallet_address);
+    res.json({ balance: balance.formatted, address: user.wallet_address, raw: balance.raw.toString(), currency: 'CELO' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ─── Send Native CELO ─────────────────────────────────────────────────────────
+
+router.post('/celo/send', async (req, res) => {
+  try {
+    const { fromTelegramId, toIdentifier, amountCelo, memo = '' } = req.body;
+    if (!fromTelegramId || !toIdentifier || !amountCelo) {
+      return res.status(400).json({ error: 'fromTelegramId, toIdentifier, amountCelo required' });
+    }
+
+    const sender = getUserByTelegramId(String(fromTelegramId));
+    if (!sender) return res.status(404).json({ error: 'Sender not found' });
+    if (!sender.wallet_private_key) return res.status(400).json({ error: 'Sender has no wallet' });
+
+    let recipientWallet;
+    if (toIdentifier.startsWith('0x')) {
+      recipientWallet = toIdentifier;
+    } else {
+      const alias = resolveAlias(sender.id, toIdentifier.replace('@', ''));
+      if (alias) {
+        recipientWallet = alias.resolved_wallet || alias.wallet_address;
+      } else {
+        const recipient = getUserByUsername(toIdentifier);
+        if (!recipient) return res.status(404).json({ error: `User "${toIdentifier}" not found` });
+        recipientWallet = recipient.wallet_address;
+      }
+    }
+
+    if (!recipientWallet) return res.status(400).json({ error: 'Recipient has no wallet' });
+
+    const balance = await getCELOBalance(sender.wallet_address);
+    if (parseFloat(balance.formatted) < parseFloat(amountCelo)) {
+      return res.status(400).json({ error: `Insufficient balance. You have ${balance.formatted} CELO` });
+    }
+
+    const { txHash, explorerUrl } = await sendCELO({
+      fromPrivateKey: sender.wallet_private_key,
+      toAddress: recipientWallet,
+      amountCelo
+    });
+
+    createTransaction({
+      txHash, txType: 'send',
+      fromUserId: sender.id, toUserId: null,
+      fromAddress: sender.wallet_address, toAddress: recipientWallet,
+      amountCusd: parseFloat(amountCelo), memo
+    });
+
+    waitForTransaction(txHash)
+      .then(r => r.status === 'confirmed' ? confirmTransaction(txHash, r.blockNumber) : failTransaction(txHash))
+      .catch(console.error);
+
+    res.json({ txHash, explorerUrl, amount: amountCelo, currency: 'CELO' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 export default router;
