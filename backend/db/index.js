@@ -12,7 +12,7 @@ let db;
 
 export function getDB() {
   if (!db) {
-    const dbPath = process.env.DB_PATH || join(__dirname, 'celopay.sqlite');
+    const dbPath = process.env.DB_PATH || join(__dirname, 'zapp.sqlite');
     db = new Database(dbPath);
     db.pragma('journal_mode = WAL');
     db.pragma('foreign_keys = ON');

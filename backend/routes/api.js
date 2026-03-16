@@ -9,12 +9,12 @@ import { generateReceiptPNG, generateReceiptPDF } from '../services/receipt.js';
 import { generateVerificationLink } from '../services/self.js';
 import { createCircle, joinCircle, contribute, getCircleStatus, getUserCircles } from '../services/esusu.js';
 import {
-  upsertUser, getUserByTelegramId, getUserByUsername,
+  getDB, upsertUser, getUserByTelegramId, getUserByUsername,
   setUserWallet, createTransaction, confirmTransaction, failTransaction,
   getTransactions, flagUser, resolveAlias, saveAlias
 } from '../db/index.js';
 import { processVerificationProof, verifyWebhookSignature } from '../services/self.js';
-import { getDB } from '../db/index.js';
+
 const db = getDB();
 
 const router = Router();
