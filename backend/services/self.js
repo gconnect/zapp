@@ -5,6 +5,8 @@
  */
 
 import crypto from 'crypto';
+import crypto from 'crypto';
+import { SelfBackendVerifier } from '@selfxyz/core';
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 
@@ -61,23 +63,17 @@ export function verifyWebhookSignature(rawBody, signatureHeader) {
  */
 export async function processVerificationProof(proof) {
   try {
-    // In production with @selfxyz/core:
-    //   const verifier = new SelfBackendVerifier({ appId: SELF_APP_ID, ... });
-    //   const result = await verifier.verify(proof);
-    //   return { valid: result.isValid, ... }
 
-    // Validate required fields exist
-    if (!proof || !proof.subject || !proof.nullifier) {
-      return { valid: false, error: 'Missing required proof fields' };
+    const result = await verifier.verify(proof);
+
+    if (!result.verified) {
+      return { valid: false, error: 'Proof verification failed' };
     }
 
-    // Basic structural validation
-    const telegramUserId = String(proof.subject);
-    const nullifier = proof.nullifier;
+    const telegramUserId = String(result.subject);
+    const nullifier = result.nullifier;
 
-    // In production: verify ZK proof cryptographically via @selfxyz/core
-    // For testnet/MVP: trust the webhook if signature verified
-    console.log(`✅ Self verification received for user ${telegramUserId}`);
+    console.log(`✅ Self verification successful for user ${telegramUserId}`);
 
     return {
       valid: true,
@@ -85,11 +81,17 @@ export async function processVerificationProof(proof) {
       nullifier,
       verifiedAt: new Date().toISOString()
     };
+
   } catch (err) {
     console.error('Self verification error:', err);
     return { valid: false, error: err.message };
   }
 }
+
+const verifier = new SelfBackendVerifier({
+  appId: SELF_APP_ID,
+  mock: true // enables mock passport verification
+});
 
 // ─── Onboarding Message ──────────────────────────────────────────────────────
 

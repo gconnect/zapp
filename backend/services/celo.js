@@ -73,6 +73,7 @@ export function getWalletClient(privateKey) {
 export function generateWallet() {
   const privateKey = generatePrivateKey();
   const account = privateKeyToAccount(privateKey);
+  console.log(`🔐 New wallet generated: ${account.address}`);
   return { address: account.address, privateKey };
 }
 

@@ -7,11 +7,18 @@ CREATE TABLE IF NOT EXISTS users (
   telegram_id       TEXT    NOT NULL UNIQUE,
   telegram_username TEXT,
   telegram_name     TEXT,
-  wallet_address    TEXT    UNIQUE,
-  wallet_private_key TEXT,  -- encrypted in production
-  self_verified     INTEGER NOT NULL DEFAULT 0,  -- 0 = no, 1 = yes
-  self_nullifier    TEXT    UNIQUE,              -- prevents double verification
+
+  wallet_address    TEXT UNIQUE,
+  wallet_private_key TEXT,
+
+  self_verified     INTEGER NOT NULL DEFAULT 0,
+  self_nullifier    TEXT UNIQUE,
+
+  self_verified_at  DATETIME,
+  self_verification_method TEXT,
+
   flagged           INTEGER NOT NULL DEFAULT 0,
+
   created_at        DATETIME DEFAULT CURRENT_TIMESTAMP,
   last_active       DATETIME DEFAULT CURRENT_TIMESTAMP
 );
@@ -112,3 +119,8 @@ CREATE INDEX IF NOT EXISTS idx_tx_status    ON transactions(status);
 CREATE INDEX IF NOT EXISTS idx_tx_created   ON transactions(created_at);
 CREATE INDEX IF NOT EXISTS idx_users_tgid   ON users(telegram_id);
 CREATE INDEX IF NOT EXISTS idx_users_wallet ON users(wallet_address);
+CREATE INDEX IF NOT EXISTS idx_users_self_verified
+ON users(self_verified);
+
+CREATE INDEX IF NOT EXISTS idx_users_self_nullifier
+ON users(self_nullifier);

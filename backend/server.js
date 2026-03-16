@@ -102,7 +102,7 @@ async function start() {
     console.log(`🗄️  Database: ${process.env.DB_PATH || './db/zapp.sqlite'}`);
     console.log(`\nEndpoints:`);
     console.log(`  GET  /health`);
-    console.log(`  POST /verify          ← Self Protocol webhook`);
+    console.log(`  POST /api/self/webhook   ← Self Protocol webhook`);
     console.log(`  POST /receipt/png     ← Generate PNG receipt`);
     console.log(`  POST /receipt/pdf     ← Generate PDF receipt`);
     console.log(`  GET  /x402/status     ← x402 facilitator status`);

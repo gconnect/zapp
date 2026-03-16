@@ -13,6 +13,8 @@ import {
   setUserWallet, createTransaction, confirmTransaction, failTransaction,
   getTransactions, flagUser, resolveAlias, saveAlias
 } from '../db/index.js';
+import { processVerificationProof, verifyWebhookSignature } from '../services/self.js';
+import db from '../db/index.js';
 
 const router = Router();
 
@@ -36,15 +38,19 @@ router.post('/onboard', async (req, res) => {
     }
 
     // Generate Self verification link
-    const { link: verificationLink } = generateVerificationLink(String(telegramId));
+let verificationLink = null;
 
-    res.json({
-      isNewUser,
-      isVerified: !!user.self_verified,
-      walletAddress: user.wallet_address,
-      verificationLink,
-      telegramName
-    });
+if (!user.self_verified) {
+  const { link } = generateVerificationLink(String(telegramId));
+  verificationLink = link;
+}
+   res.json({
+    isNewUser,
+    isVerified: !!user.self_verified,
+    walletAddress: user.wallet_address,
+    verificationLink,
+    telegramName
+  });
   } catch (err) {
     console.error('Onboard error:', err);
     res.status(500).json({ error: err.message });
@@ -457,5 +463,36 @@ router.post('/celo/send', async (req, res) => {
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
+});
+
+router.post('/self/webhook', async (req, res) => {
+
+  const rawBody = JSON.stringify(req.body);
+
+  // Skip signature verification in mock mode
+  if (process.env.SELF_MOCK !== 'true') {
+    const signature = req.headers['x-self-signature'];
+
+    if (!verifyWebhookSignature(rawBody, signature)) {
+      return res.status(403).json({ error: 'Invalid signature' });
+    }
+  }
+
+  const result = await processVerificationProof(req.body);
+
+  if (!result.valid) {
+    return res.status(400).json({ error: result.error });
+  }
+
+  db.prepare(`
+    UPDATE users
+    SET self_verified = 1,
+        self_nullifier = ?
+    WHERE telegram_id = ?
+  `).run(result.nullifier, result.telegramUserId);
+
+  console.log(`✅ User ${result.telegramUserId} verified`);
+
+  res.json({ success: true });
 });
 export default router;

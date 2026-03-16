@@ -1,5 +1,6 @@
 {
   "dependencies": {
-    "@selfxyz/agent-sdk": "^0.2.1"
+    "@selfxyz/agent-sdk": "^0.2.1",
+    "@selfxyz/core": "^1.2.0-beta.1"
   }
 }

@@ -10,8 +10,9 @@ import { contributeToCircle, waitForTransaction } from './celo.js';
 export async function createCircle({ adminTelegramId, name, contributionCusd, intervalDays, maxMembers, telegramGroupId }) {
   const admin = db.getUserByTelegramId(adminTelegramId);
   if (!admin) throw new Error('Admin user not found');
-  if (!admin.self_verified) throw new Error('Admin must be Self-verified to create a circle');
-
+if (!admin.self_verified) {
+  throw new Error('Identity verification required. Please complete Self verification before creating a circle.');
+}
   const circleId = db.createCircle({
     name,
     adminUserId: admin.id,
@@ -32,8 +33,9 @@ export async function createCircle({ adminTelegramId, name, contributionCusd, in
 export async function joinCircle({ telegramId, circleId }) {
   const user = db.getUserByTelegramId(telegramId);
   if (!user) throw new Error('User not found');
-  if (!user.self_verified) throw new Error('You must complete identity verification before joining a circle');
-
+if (!user.self_verified) {
+  throw new Error('Identity verification required. Complete Self verification before joining a circle.');
+}
   const circle = db.getCircle(circleId);
   if (!circle) throw new Error(`Circle #${circleId} not found`);
   if (circle.status !== 'active') throw new Error('This circle is no longer active');
