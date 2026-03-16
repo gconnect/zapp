@@ -8,7 +8,8 @@
     "start": "node server.js",
     "dev": "node --watch server.js",
     "test": "node tests/backend.test.js",
-    "db:init": "node db/init.js"
+    "db:init": "node db/init.js",
+    "migrate": "node db/init.js"
   },
   "dependencies": {
     "better-sqlite3": "^9.4.0",
