@@ -495,4 +495,31 @@ router.post('/self/webhook', async (req, res) => {
 
   res.json({ success: true });
 });
+
+router.get('/self/status/:telegramId', async (req, res) => {
+  try {
+    const { telegramId } = req.params;
+
+    const user = await db.get(
+      `SELECT self_verified FROM users WHERE telegram_id = ?`,
+      [telegramId]
+    );
+
+    if (!user) {
+      return res.status(404).json({
+        error: "User not found"
+      });
+    }
+
+    res.json({
+      verified: user.self_verified === 1
+    });
+
+  } catch (err) {
+    console.error("Verification status error:", err);
+    res.status(500).json({
+      error: "Failed to check verification status"
+    });
+  }
+});
 export default router;
