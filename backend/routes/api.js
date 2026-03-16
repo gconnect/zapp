@@ -142,7 +142,7 @@ router.post('/send', async (req, res) => {
 
 router.post('/split/equal', async (req, res) => {
   try {
-    const { fromTelegramId, recipientIdentifiers, totalAmountCusd, memo = '' } = req.body;
+    const { fromTelegramId, recipientIdentifiers, totalAmount, token = 'cUSD', memo = '' } = req.body;
     if (!fromTelegramId || !recipientIdentifiers?.length || !totalAmountCusd) {
       return res.status(400).json({ error: 'fromTelegramId, recipientIdentifiers[], totalAmountCusd required' });
     }
@@ -160,36 +160,135 @@ router.post('/split/equal', async (req, res) => {
     }
 
     // Execute on-chain or direct if no contract deployed
-    let txHash, explorerUrl;
-    if (process.env.SPLIT_PAYMENT_ADDRESS) {
-      ({ txHash, explorerUrl } = await splitEqualOnChain({
-        fromPrivateKey: sender.wallet_private_key,
-        recipients: wallets,
-        totalAmountCusd,
-        memo
-      }));
-    } else {
-      // Fallback: sequential sends
-      const perPerson = totalAmountCusd / wallets.length;
-      const hashes = [];
-      for (const w of wallets) {
-        const r = await sendCUSD({ fromPrivateKey: sender.wallet_private_key, toAddress: w, amountCusd: perPerson, memo });
-        hashes.push(r.txHash);
-      }
-      txHash = hashes[0];
-      explorerUrl = getExplorerUrl(txHash);
+   let txHash, explorerUrl;
+
+if (process.env.SPLIT_PAYMENT_ADDRESS) {
+  if (token === 'cUSD') {
+    ({ txHash, explorerUrl } = await splitEqualOnChain({
+      fromPrivateKey: sender.wallet_private_key,
+      recipients: wallets,
+      totalAmount,
+      memo
+    }));
+  } else if (token === 'CELO') {
+    const perPerson = totalAmount / wallets.length;
+    const hashes = [];
+    for (const w of wallets) {
+      const r = await sendCELO({ fromPrivateKey: sender.wallet_private_key, toAddress: w, amountCelo: perPerson, memo });
+      hashes.push(r.txHash);
     }
+    txHash = hashes[0];
+    explorerUrl = getExplorerUrl(txHash);
+  } else {
+    return res.status(400).json({ error: 'Unsupported token. Only cUSD or CELO allowed.' });
+  }
+} else {
+  // Fallback for no contract
+  if (token === 'cUSD') {
+    const perPerson = totalAmount / wallets.length;
+    const hashes = [];
+    for (const w of wallets) {
+      const r = await sendCUSD({ fromPrivateKey: sender.wallet_private_key, toAddress: w, amountCusd: perPerson, memo });
+      hashes.push(r.txHash);
+    }
+    txHash = hashes[0];
+    explorerUrl = getExplorerUrl(txHash);
+  } else if (token === 'CELO') {
+    const perPerson = totalAmount / wallets.length;
+    const hashes = [];
+    for (const w of wallets) {
+      const r = await sendCELO({ fromPrivateKey: sender.wallet_private_key, toAddress: w, amountCelo: perPerson, memo });
+      hashes.push(r.txHash);
+    }
+    txHash = hashes[0];
+    explorerUrl = getExplorerUrl(txHash);
+  } else {
+    return res.status(400).json({ error: 'Unsupported token. Only cUSD or CELO allowed.' });
+  }
+}
 
     createTransaction({
       txHash, txType: 'split',
       fromUserId: sender.id, toUserId: null,
       fromAddress: sender.wallet_address, toAddress: wallets.join(','),
-      amountCusd: parseFloat(totalAmountCusd), memo
+amountCusd: token === 'cUSD' ? parseFloat(totalAmount) : 0,
+amountCelo: token === 'CELO' ? parseFloat(totalAmount) : 0
     });
 
     res.json({ txHash, explorerUrl, recipients: recipientIdentifiers.length });
   } catch (err) {
     console.error('Split error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ─── Split Custom ─────────────────────────────────────────────────────────────
+
+router.post('/split/custom', async (req, res) => {
+  try {
+    const { fromTelegramId, recipients, token = 'cUSD', memo = '' } = req.body;
+    if (!fromTelegramId || !recipients?.length) {
+      return res.status(400).json({ error: 'fromTelegramId and recipients[] required' });
+    }
+
+    const sender = getUserByTelegramId(String(fromTelegramId));
+    if (!sender) return res.status(404).json({ error: 'Sender not found' });
+    if (!sender.self_verified) return res.status(403).json({ error: 'Identity verification required' });
+
+    // Resolve all recipient wallets
+    const wallets = [];
+    for (const r of recipients) {
+      let walletAddress;
+      if (r.identifier.startsWith('0x')) {
+        walletAddress = r.identifier;
+      } else {
+        const user = getUserByUsername(r.identifier);
+        if (!user?.wallet_address) {
+          return res.status(404).json({ error: `Recipient "${r.identifier}" not found or has no wallet` });
+        }
+        walletAddress = user.wallet_address;
+      }
+      wallets.push({ wallet: walletAddress, amount: r.amount });
+    }
+
+    // Execute on-chain transfers
+    const hashes = [];
+    for (const w of wallets) {
+      if (token === 'cUSD') {
+        const r = await sendCUSD({ fromPrivateKey: sender.wallet_private_key, toAddress: w.wallet, amountCusd: w.amount, memo });
+        hashes.push(r.txHash);
+      } else if (token === 'CELO') {
+        const r = await sendCELO({ fromPrivateKey: sender.wallet_private_key, toAddress: w.wallet, amountCelo: w.amount, memo });
+        hashes.push(r.txHash);
+      } else {
+        return res.status(400).json({ error: 'Unsupported token. Only cUSD or CELO allowed.' });
+      }
+    }
+
+    const txHash = hashes[0];
+    const explorerUrl = getExplorerUrl(txHash);
+
+    // Record transactions in DB
+    for (const w of wallets) {
+      createTransaction({
+        txHash, txType: 'split_custom',
+        fromUserId: sender.id, toUserId: null,
+        fromAddress: sender.wallet_address, toAddress: w.wallet,
+        amountCusd: token === 'cUSD' ? parseFloat(w.amount) : 0,
+        amountCelo: token === 'CELO' ? parseFloat(w.amount) : 0,
+        memo
+      });
+    }
+
+    res.json({
+      txHash,
+      explorerUrl,
+      total: wallets.reduce((sum, w) => sum + w.amount, 0),
+      recipients: wallets.length,
+      token
+    });
+  } catch (err) {
+    console.error('Custom split error:', err);
     res.status(500).json({ error: err.message });
   }
 });
