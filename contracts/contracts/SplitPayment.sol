@@ -132,4 +132,34 @@ contract SplitPayment {
         a[0] = amount;
         emit PaymentSplit(msg.sender, token, r, a, amount, memo);
     }
+
+// ─── Native CELO Functions ──────────────────────────────────────────────────
+
+/**
+ * @notice Split native CELO equally among recipients
+ */
+function splitEqualCELO(
+    address[] calldata recipients,
+    string calldata memo
+) external payable {
+    if (recipients.length == 0) revert NoRecipients();
+    if (msg.value == 0) revert ZeroAmount();
+
+    uint256 amountEach = msg.value / recipients.length;
+    if (amountEach == 0) revert ZeroAmount();
+
+    for (uint256 i = 0; i < recipients.length; i++) {
+        (bool sent, ) = recipients[i].call{value: amountEach}("");
+        if (!sent) revert TransferFailed();
+    }
+
+    // Return dust to sender
+    uint256 distributed = amountEach * recipients.length;
+    if (distributed < msg.value) {
+        (bool ok, ) = msg.sender.call{value: msg.value - distributed}("");
+        if (!ok) revert TransferFailed();
+    }
+
+    emit EqualSplit(msg.sender, address(0), recipients, amountEach, memo);
+}
 }

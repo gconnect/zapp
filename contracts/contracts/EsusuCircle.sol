@@ -14,6 +14,7 @@ contract EsusuCircle {
     struct Circle {
         string  name;
         address admin;
+        bool useNativeCELO;
         address cUSDToken;
         uint256 contributionAmount; // in wei (18 decimals)
         uint256 intervalDays;       // days between rounds
@@ -29,7 +30,8 @@ contract EsusuCircle {
     }
 
     // ─── State ──────────────────────────────────────────────────────────────────
-
+    // In the Circle struct, add:
+    bool useNativeCELO;
     uint256 public circleCount;
     mapping(uint256 => Circle) private circles;
     mapping(address => uint256[]) public userCircles; // user => circle IDs
@@ -241,4 +243,83 @@ contract EsusuCircle {
         }
         return true;
     }
+
+// Add new create function:
+function createCircleCELO(
+    string calldata name,
+    uint256 contributionAmount,
+    uint256 intervalDays,
+    uint256 maxMembers
+) external returns (uint256 circleId) {
+    if (contributionAmount == 0) revert InvalidAmount();
+    if (maxMembers < 2) revert InvalidAmount();
+
+    circleId = ++circleCount;
+    Circle storage c = circles[circleId];
+    c.name               = name;
+    c.admin              = msg.sender;
+    c.useNativeCELO      = true;
+    c.contributionAmount = contributionAmount;
+    c.intervalDays       = intervalDays;
+    c.maxMembers         = maxMembers;
+    c.currentRound       = 1;
+    c.nextPayoutTime     = block.timestamp + (intervalDays * 1 days);
+    c.active             = true;
+
+    c.members.push(msg.sender);
+    c.isMember[msg.sender] = true;
+    userCircles[msg.sender].push(circleId);
+
+    emit CircleCreated(circleId, name, msg.sender, contributionAmount);
+    emit MemberJoined(circleId, msg.sender);
+}
+
+function contributeCELO(uint256 circleId)
+    external
+    payable
+    circleActive(circleId)
+    onlyMember(circleId)
+{
+    Circle storage c = circles[circleId];
+    if (!c.useNativeCELO) revert TransferFailed();
+    uint256 round = c.currentRound;
+    if (c.roundPaid[round][msg.sender]) revert AlreadyPaidThisRound();
+    if (msg.value != c.contributionAmount) revert InvalidAmount();
+
+    c.roundPaid[round][msg.sender]  = true;
+    c.roundContributions[round]    += msg.value;
+
+    emit ContributionMade(circleId, round, msg.sender, msg.value);
+}
+
+function releasePayoutCELO(uint256 circleId, address payable recipient)
+    external
+    circleActive(circleId)
+    onlyAdmin(circleId)
+{
+    Circle storage c = circles[circleId];
+    if (!c.useNativeCELO) revert TransferFailed();
+    uint256 round = c.currentRound;
+
+    if (!_allPaid(circleId, round)) revert RoundNotComplete();
+    if (block.timestamp < c.nextPayoutTime) revert PayoutNotDue();
+    if (!c.isMember[recipient]) revert NotMember();
+
+    uint256 pot = c.roundContributions[round];
+    c.roundRecipient[round] = recipient;
+    c.currentRound++;
+    c.nextPayoutTime = block.timestamp + (c.intervalDays * 1 days);
+
+    (bool ok, ) = recipient.call{value: pot}("");
+    if (!ok) revert TransferFailed();
+
+    emit PayoutReleased(circleId, round, recipient, pot);
+
+    if (c.currentRound > c.members.length) {
+        c.active = false;
+        emit CircleClosed(circleId);
+    }
+}
+
+receive() external payable {}
 }
