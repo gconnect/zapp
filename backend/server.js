@@ -92,6 +92,7 @@ async function start() {
   // Initialize database
   const db = initDB();
   app.locals.db = db;
+  app.locals.getDB = () => db;
 
   app.listen(PORT, () => {
     console.log(`\n╔══════════════════════════════════════════╗`);
@@ -102,11 +103,12 @@ async function start() {
     console.log(`🗄️  Database: ${process.env.DB_PATH || './db/zapp.sqlite'}`);
     console.log(`\nEndpoints:`);
     console.log(`  GET  /health`);
-    console.log(`  POST /api/self/webhook   ← Self Protocol webhook`);
+    console.log(`  POST /verify/self/webhook   ← Self Protocol webhook`);
     console.log(`  POST /receipt/png     ← Generate PNG receipt`);
     console.log(`  POST /receipt/pdf     ← Generate PDF receipt`);
     console.log(`  GET  /x402/status     ← x402 facilitator status`);
     console.log(`  GET  /admin/stats     ← Admin statistics\n`);
+    console.log(`  GET  /api/self/status/:telegramId ← Verification status`);
   });
 }
 
