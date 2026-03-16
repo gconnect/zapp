@@ -14,7 +14,8 @@ import {
   getTransactions, flagUser, resolveAlias, saveAlias
 } from '../db/index.js';
 import { processVerificationProof, verifyWebhookSignature } from '../services/self.js';
-import db from '../db/index.js';
+import { getDB } from '../db/index.js';
+const db = getDB();
 
 const router = Router();
 
@@ -500,10 +501,9 @@ router.get('/self/status/:telegramId', async (req, res) => {
   try {
     const { telegramId } = req.params;
 
-    const user = await db.get(
-      `SELECT self_verified FROM users WHERE telegram_id = ?`,
-      [telegramId]
-    );
+    const user = db
+      .prepare(`SELECT self_verified FROM users WHERE telegram_id = ?`)
+      .get(telegramId);
 
     if (!user) {
       return res.status(404).json({
