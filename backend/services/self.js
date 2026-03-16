@@ -3,8 +3,6 @@
  * Handles ZK identity verification for user onboarding
  * Docs: https://docs.self.xyz/backend-integration/basic-integration
  */
-
-import crypto from 'crypto';
 import crypto from 'crypto';
 import { SelfBackendVerifier } from '@selfxyz/core';
 
