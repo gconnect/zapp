@@ -6,7 +6,6 @@
 import { Router } from 'express';
 import { getCUSDBalance, sendCUSD, splitEqualOnChain, generateWallet, waitForTransaction, getExplorerUrl, getCELOBalance, sendCELO } from '../services/celo.js';
 import { generateReceiptPNG, generateReceiptPDF } from '../services/receipt.js';
-import { generateVerificationLink } from '../services/self.js';
 import { createCircle, joinCircle, contribute, getCircleStatus, getUserCircles } from '../services/esusu.js';
 import {
   getDB, upsertUser, getUserByTelegramId, getUserByUsername,
@@ -47,7 +46,7 @@ router.post('/onboard', async (req, res) => {
 let verificationLink = null;
 
 if (!user.self_verified) {
-  const { link } = generateVerificationLink(String(telegramId));
+  const { link } = createVerificationSession(String(telegramId));
   verificationLink = link;
 }
    res.json({
