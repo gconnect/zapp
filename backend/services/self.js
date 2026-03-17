@@ -60,13 +60,11 @@ export function verifyWebhookSignature(rawBody, signatureHeader) {
  * @returns {object} { valid, telegramUserId, nullifier }
  */
 export async function processVerificationProof(proof) {
-    console.log('Proof received:', proof);
-
   try {
-    // Ensure proof exists and has the required fields
-    if (!proof || !proof.subject) {
-      throw new Error('Invalid proof: missing subject');
-    }
+    const verifier = new SelfBackendVerifier({
+      appId: SELF_APP_ID,
+      mock: true
+    });
 
     const result = await verifier.verify(proof);
 
@@ -91,11 +89,6 @@ export async function processVerificationProof(proof) {
     return { valid: false, error: err.message };
   }
 }
-
-const verifier = new SelfBackendVerifier({
-  appId: SELF_APP_ID,
-  mock: true // enables mock passport verification
-});
 
 // ─── Onboarding Message ──────────────────────────────────────────────────────
 
