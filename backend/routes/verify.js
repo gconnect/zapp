@@ -1,5 +1,11 @@
 import { Router } from 'express';
-import { verifyWebhookSignature, processVerificationProof } from '../services/self.js';
+import {
+  verifyWebhookSignature,
+  processVerificationProof,
+  createVerificationSession, // replaces generateVerificationLink
+  generateVerificationQRCode,
+  checkVerificationStatus
+} from '../services/self.js';
 import { getUserByTelegramId, setUserVerified } from '../db/index.js';
 
 const router = Router();
