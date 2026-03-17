@@ -1,7 +1,6 @@
 import crypto from 'crypto';
 import fetch from 'node-fetch';
 import QRCode from 'qrcode';
-import { verifyWebhookSignature as verifySignatureFromHeaders } from './utils.js'; // optional helper for signature verification
 
 const SELF_APP_ID = process.env.SELF_APP_ID || 'zapp-app';
 const SELF_APP_SECRET = process.env.SELF_APP_SECRET || '';
