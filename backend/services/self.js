@@ -5,10 +5,17 @@ import QRCode from 'qrcode';
 const SELF_APP_ID = process.env.SELF_APP_ID || 'zapp-app';
 const SELF_APP_SECRET = process.env.SELF_APP_SECRET || '';
 const WEBHOOK_SECRET = process.env.SELF_WEBHOOK_SECRET || '';
+const MOCK_SELF = process.env.SELF_MOCK === 'true';
 
 // ─── Create a Self Verification Session ──────────────────────────────────────
-
 export async function createVerificationSession(telegramUserId) {
+  if (MOCK_SELF) {
+    // Return a mock session for testing
+    const sessionId = crypto.randomUUID();
+    const verificationLink = `https://self.xyz/verify?appId=${SELF_APP_ID}&subject=${telegramUserId}&sessionId=${sessionId}`;
+    return { sessionId, verificationLink };
+  }
+
   const response = await fetch('https://api.self.xyz/v1/verification-sessions', {
     method: 'POST',
     headers: {
@@ -36,14 +43,21 @@ export async function createVerificationSession(telegramUserId) {
 }
 
 // ─── Generate QR Code ────────────────────────────────────────────────────────
-
 export async function generateVerificationQRCode(verificationLink) {
   return QRCode.toDataURL(verificationLink);
 }
 
-// ─── Poll Verification Status (Optional) ─────────────────────────────────────
-
+// ─── Poll Verification Status ───────────────────────────────────────────────
 export async function checkVerificationStatus(sessionId) {
+  if (MOCK_SELF) {
+    // Always return verified in mock mode
+    return {
+      verified: true,
+      nullifier: 'mock-nullifier',
+      subject: 'mock-subject'
+    };
+  }
+
   const response = await fetch(`https://api.self.xyz/v1/verification-sessions/${sessionId}`, {
     headers: {
       'x-app-id': SELF_APP_ID,
@@ -56,7 +70,6 @@ export async function checkVerificationStatus(sessionId) {
 }
 
 // ─── Webhook Signature Verification ──────────────────────────────────────────
-
 export function verifyWebhookSignature(rawBody, signatureHeader) {
   if (!WEBHOOK_SECRET) return true; // skip in dev/mock
   const expected = crypto
@@ -64,4 +77,26 @@ export function verifyWebhookSignature(rawBody, signatureHeader) {
     .update(rawBody)
     .digest('hex');
   return signatureHeader === `sha256=${expected}`;
+}
+
+// ─── Mock processVerificationProof ─────────────────────────────────────────
+export async function processVerificationProof(proof) {
+  if (MOCK_SELF) {
+    return {
+      valid: true,
+      telegramUserId: proof.subject || 'mock-subject',
+      nullifier: 'mock-nullifier',
+      verifiedAt: new Date().toISOString()
+    };
+  }
+
+  // In real mode, call checkVerificationStatus
+  const result = await checkVerificationStatus(proof.sessionId);
+  if (!result.verified) return { valid: false, error: 'Proof verification failed' };
+  return {
+    valid: true,
+    telegramUserId: result.subject,
+    nullifier: result.nullifier,
+    verifiedAt: new Date().toISOString()
+  };
 }
