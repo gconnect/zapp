@@ -1,70 +1,33 @@
 import { Router } from 'express';
-import {
-  verifyWebhookSignature,
-  processVerificationProof,
-  createVerificationSession, // replaces generateVerificationLink
-  generateVerificationQRCode,
-  checkVerificationStatus
-} from '../services/self.js';
-import { getUserByTelegramId, setUserVerified } from '../db/index.js';
+import { initiateSelfVerification, pollSelfVerificationStatus } from '../services/self.js';
+import { getUserByTelegramId } from '../db/index.js';
 
 const router = Router();
 
 /**
  * POST /verify
- * Receives Self Protocol ZK proof webhook after user completes verification
+ * Start Self verification: returns QR + sessionToken for frontend/bot
  */
 router.post('/', async (req, res) => {
   try {
-    // Verify webhook signature
-    const signature = req.headers['x-self-signature'];
-    const rawBody = JSON.stringify(req.body);
-    const sigValid = verifyWebhookSignature(rawBody, signature);
-
-    if (!sigValid) {
-      console.error('❌ Invalid Self webhook signature');
-      return res.status(401).json({ error: 'Invalid signature' });
-    }
-
-    const proof = req.body;
-    const { valid, telegramUserId, nullifier, error } = await processVerificationProof(proof);
-
-    if (!valid) {
-      console.error('❌ Self proof invalid:', error);
-      return res.status(400).json({ error });
-    }
+    const { telegramUserId, walletAddress } = req.body;
 
     // Check user exists
     const user = getUserByTelegramId(telegramUserId);
-    if (!user) {
-      console.warn(`⚠️  Verified user ${telegramUserId} not found in DB`);
-      return res.status(404).json({ error: 'User not found' });
-    }
+    if (!user) return res.status(404).json({ error: 'User not found' });
 
-    // Check for nullifier reuse (anti-sybil)
-    const existing = req.app.locals.db?.prepare(
-      'SELECT id FROM users WHERE self_nullifier = ?'
-    ).get(nullifier);
+    // Start Self registration
+    const { agentAddress, sessionToken, qrDataURL } = await initiateSelfVerification(walletAddress);
 
-    if (existing && existing.id !== user.id) {
-      console.warn(`⚠️  Nullifier reuse detected for user ${telegramUserId}`);
-      return res.status(409).json({ error: 'Verification already used' });
-    }
-
-    // Mark user as verified
-    setUserVerified(telegramUserId, nullifier);
-
-    console.log(`✅ User ${telegramUserId} (@${user.telegram_username}) verified via Self Protocol`);
-
-    // Emit event for bot to send confirmation message
-    req.app.locals.events?.emit('user:verified', {
-      telegramId: telegramUserId,
-      username: user.telegram_username
+    // Return QR & sessionToken to frontend/bot
+    return res.json({
+      agentAddress,
+      sessionToken,
+      qrDataURL,
+      message: 'Scan QR to complete verification'
     });
-
-    return res.json({ success: true, message: 'User verified successfully' });
   } catch (err) {
-    console.error('Verify route error:', err);
+    console.error('Error starting Self verification:', err);
     return res.status(500).json({ error: 'Internal server error' });
   }
 });

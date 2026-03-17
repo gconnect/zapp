@@ -109,6 +109,8 @@ async function start() {
     console.log(`  GET  /x402/status     ← x402 facilitator status`);
     console.log(`  GET  /admin/stats     ← Admin statistics\n`);
     console.log(`  GET  /api/self/status/:telegramId ← Verification status`);
+    console.log(`  GET  /api/self/qr/:telegramId ← Verification QR`);
+    console.log(`  GET  /api/self/poll/:sessionToken ← Verification poll`);
   });
 }
 
