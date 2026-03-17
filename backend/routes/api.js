@@ -13,7 +13,8 @@ import {
   getTransactions, flagUser, resolveAlias, saveAlias
 } from '../db/index.js';
 import { 
-  initiateSelfVerification
+  initiateSelfVerification,
+  pollSelfVerificationStatus
 } from '../services/self.js';
 
 const db = getDB();
