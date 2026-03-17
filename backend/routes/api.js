@@ -13,7 +13,12 @@ import {
   setUserWallet, createTransaction, confirmTransaction, failTransaction,
   getTransactions, flagUser, resolveAlias, saveAlias
 } from '../db/index.js';
-import { processVerificationProof, verifyWebhookSignature } from '../services/self.js';
+import { 
+  createVerificationSession,
+  generateVerificationQRCode,
+  checkVerificationStatus,
+  verifyWebhookSignature
+} from '../services/self.js';
 
 const db = getDB();
 
@@ -466,60 +471,62 @@ router.post('/celo/send', async (req, res) => {
   }
 });
 
-router.post('/self/webhook', async (req, res) => {
+router.get('/self/link/:telegramId', async (req, res) => {
+  try {
+    const { telegramId } = req.params;
 
+    const { sessionId, verificationLink } = await createVerificationSession(telegramId);
+    const qrCode = await generateVerificationQRCode(verificationLink);
+
+    res.json({ sessionId, verificationLink, qrCode });
+  } catch (err) {
+    console.error('Error generating Self link:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ─── Webhook for Self Verification ───────────────────────────────────────────
+router.post('/self/webhook', async (req, res) => {
   const rawBody = JSON.stringify(req.body);
 
-  // Skip signature verification in mock mode
   if (process.env.SELF_MOCK !== 'true') {
     const signature = req.headers['x-self-signature'];
-
     if (!verifyWebhookSignature(rawBody, signature)) {
       return res.status(403).json({ error: 'Invalid signature' });
     }
   }
 
-  const result = await processVerificationProof(req.body);
+  const { verified, subject: telegramUserId, nullifier } = req.body;
 
-  if (!result.valid) {
-    return res.status(400).json({ error: result.error });
-  }
+  if (!verified) return res.status(400).json({ error: 'User not verified' });
 
+  // Update user record
   db.prepare(`
     UPDATE users
     SET self_verified = 1,
         self_nullifier = ?
     WHERE telegram_id = ?
-  `).run(result.nullifier, result.telegramUserId);
+  `).run(nullifier, telegramUserId);
 
-  console.log(`✅ User ${result.telegramUserId} verified`);
+  console.log(`✅ User ${telegramUserId} verified via Self API`);
 
   res.json({ success: true });
 });
 
+// ─── Check Verification Status ───────────────────────────────────────────────
 router.get('/self/status/:telegramId', async (req, res) => {
   try {
     const { telegramId } = req.params;
 
-    const user = db
-      .prepare(`SELECT self_verified FROM users WHERE telegram_id = ?`)
-      .get(telegramId);
+    const user = db.prepare('SELECT self_verified FROM users WHERE telegram_id = ?').get(telegramId);
+    if (!user) return res.status(404).json({ error: 'User not found' });
 
-    if (!user) {
-      return res.status(404).json({
-        error: "User not found"
-      });
-    }
-
-    res.json({
-      verified: user.self_verified === 1
-    });
-
+    res.json({ verified: user.self_verified === 1 });
   } catch (err) {
-    console.error("Verification status error:", err);
-    res.status(500).json({
-      error: "Failed to check verification status"
-    });
+    console.error('Verification status error:', err);
+    res.status(500).json({ error: 'Failed to check verification status' });
   }
 });
+
+
 export default router;
