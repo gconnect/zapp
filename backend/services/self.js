@@ -9,6 +9,7 @@ import QRCode from 'qrcode';
 
 const SELF_NETWORK = 'testnet'; // or 'mainnet'
 
+const sessionMap = new Map();
 
 // ─── Step 1: Initiate Self Agent Registration ───────────────────────────────
 export async function initiateSelfVerification(walletAddress) {
@@ -69,3 +70,11 @@ export async function exportSelfAgentKey(sessionToken) {
   return await exportRes.json(); // { privateKey, agentAddress, agentId }
 }
 
+
+export function saveSessionToken(sessionToken, telegramId) {
+  sessionMap.set(sessionToken, telegramId);
+}
+
+export function getTelegramIdBySessionToken(sessionToken) {
+  return sessionMap.get(sessionToken);
+}

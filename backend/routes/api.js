@@ -14,7 +14,9 @@ import {
 } from '../db/index.js';
 import { 
   initiateSelfVerification,
-  pollSelfVerificationStatus
+  pollSelfVerificationStatus,
+  saveSessionToken,
+  getTelegramIdBySessionToken
 } from '../services/self.js';
 
 const db = getDB();
@@ -43,15 +45,17 @@ router.post('/onboard', async (req, res) => {
     let verificationLink = null;
     let sessionToken = null;
 
-    if (!user.self_verified) {
-      const verificationData = await initiateSelfVerification(user.wallet_address);
-      verificationLink = verificationData.qrDataURL; // send QR to frontend
-      sessionToken = verificationData.sessionToken;
+   // in your /onboard route
+if (!user.self_verified) {
+  const verificationData = await initiateSelfVerification(user.wallet_address);
 
-      // Optionally store sessionToken → telegramId mapping for later polling
-      req.app.locals.selfSessions = req.app.locals.selfSessions || {};
-      req.app.locals.selfSessions[sessionToken] = telegramId;
-    }
+  // Store internally by telegramId
+  req.app.locals.selfSessions = req.app.locals.selfSessions || {};
+  req.app.locals.selfSessions[telegramId] = verificationData.sessionToken;
+
+  verificationLink = verificationData.qrDataURL; // QR only
+  // No need to return sessionToken
+}
 
     res.json({
       isNewUser,
@@ -491,26 +495,98 @@ router.post('/self/register', async (req, res) => {
   }
 });
 
+router.get('/self/status/:telegramId', async (req, res) => {
+  const { telegramId } = req.params;
+
+  const sessionToken = req.app.locals.selfSessions?.[telegramId];
+  if (!sessionToken) return res.status(404).json({ error: 'No verification session found' });
+
+  try {
+    const status = await pollSelfVerificationStatus(sessionToken);
+
+    if (status.stage === 'completed') {
+      const user = getUserByTelegramId(telegramId);
+      if (!user?.self_verified) {
+        setUserVerified(telegramId, status.agentId);
+      }
+
+      return res.json({
+        verified: true,
+        stage: status.stage,
+        agentId: status.agentId,
+        humanAddress: status.humanAddress
+      });
+    }
+
+    return res.json({
+      verified: false,
+      stage: status.stage
+    });
+
+  } catch (err) {
+    console.error('Error polling Self status:', err);
+    return res.status(500).json({ error: 'Failed to check verification status' });
+  }
+});
+
 router.get('/self/status/:sessionToken', async (req, res) => {
   const { sessionToken } = req.params;
 
   try {
     const status = await pollSelfVerificationStatus(sessionToken);
 
-    if (status.stage === 'completed') {
-      // Mark user verified in your DB
-      // Look up telegramId from sessionToken mapping
-      const telegramId = getTelegramIdBySessionToken(sessionToken);
-      if (telegramId) setUserVerified(telegramId, status.agentId);
+    const telegramId = getTelegramIdBySessionToken(sessionToken);
 
-      return res.json({ verified: true, agentId: status.agentId, humanAddress: status.humanAddress });
+    if (!telegramId) {
+      console.warn('No telegramId found for sessionToken:', sessionToken);
     }
 
-    res.json({ verified: false, stage: status.stage });
+    if (status.stage === 'completed') {
+      if (telegramId) {
+        const user = getUserByTelegramId(telegramId);
+
+        if (!user?.self_verified) {
+          setUserVerified(telegramId, status.agentId);
+        }
+      }
+
+      return res.json({
+        verified: true,
+        stage: status.stage,
+        agentId: status.agentId,
+        humanAddress: status.humanAddress,
+        telegramId
+      });
+    }
+
+    // ⬇️ still inside try block
+    return res.json({
+      verified: false,
+      stage: status.stage,
+      telegramId
+    });
+
   } catch (err) {
     console.error('Error polling Self status:', err);
-    res.status(500).json({ error: 'Failed to check verification status' });
+    return res.status(500).json({ error: 'Failed to check verification status' });
   }
+});
+
+router.get('/self/session/:sessionToken', (req, res) => {
+  const { sessionToken } = req.params;
+
+  const telegramId = getTelegramIdBySessionToken(sessionToken);
+
+  if (!telegramId) {
+    return res.status(404).json({
+      error: 'Session not found or expired'
+    });
+  }
+
+  res.json({
+    sessionToken,
+    telegramId
+  });
 });
 
 export default router;
