@@ -9,36 +9,29 @@ const MOCK_SELF = process.env.SELF_MOCK === 'true';
 
 // ─── Create a Self Verification Session ──────────────────────────────────────
 export async function createVerificationSession(telegramUserId) {
-  if (MOCK_SELF) {
-    // Return a mock session for testing
-    const sessionId = crypto.randomUUID();
-    const verificationLink = `https://self.xyz/verify?appId=${SELF_APP_ID}&subject=${telegramUserId}&sessionId=${sessionId}`;
-    return { sessionId, verificationLink };
-  }
-
   const response = await fetch('https://api.self.xyz/v1/verification-sessions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-app-id': SELF_APP_ID,
-      'x-app-secret': SELF_APP_SECRET,
-    },
-    body: JSON.stringify({
-      subject: String(telegramUserId),
-      requirements: {
-        minimumAge: 18,
-        excludedCountries: [],
-        ofac: true
-      }
-    }),
-  });
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'x-app-id': SELF_APP_ID,
+    'x-app-secret': SELF_APP_SECRET,
+  },
+  body: JSON.stringify({
+    subject: telegramUserId,
+    requirements: {
+      minimumAge: 18,
+      excludedCountries: [],
+      ofac: true
+    }
+  }),
+});
 
-  const data = await response.json();
-  if (!response.ok) throw new Error(data.error || 'Failed to create verification session');
+const data = await response.json();
+const verificationLink = data.verificationLink; // <-- this is the real link
 
   return {
     sessionId: data.sessionId,
-    verificationLink: data.verificationLink
+    verificationLink: verificationLink
   };
 }
 
