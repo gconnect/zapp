@@ -63,7 +63,8 @@ export async function processVerificationProof(proof) {
   try {
     const verifier = new SelfBackendVerifier({
       appId: SELF_APP_ID,
-      mock: true
+      appSecret: process.env.SELF_APP_SECRET,
+      mock: false
     });
 
     const result = await verifier.verify(proof);
