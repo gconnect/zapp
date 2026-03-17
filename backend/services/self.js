@@ -60,7 +60,13 @@ export function verifyWebhookSignature(rawBody, signatureHeader) {
  * @returns {object} { valid, telegramUserId, nullifier }
  */
 export async function processVerificationProof(proof) {
+    console.log('Proof received:', proof);
+
   try {
+    // Ensure proof exists and has the required fields
+    if (!proof || !proof.subject) {
+      throw new Error('Invalid proof: missing subject');
+    }
 
     const result = await verifier.verify(proof);
 
