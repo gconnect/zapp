@@ -49,12 +49,11 @@ router.post('/onboard', async (req, res) => {
 if (!user.self_verified) {
   const verificationData = await initiateSelfVerification(user.wallet_address);
 
-  // Store internally by telegramId
-  req.app.locals.selfSessions = req.app.locals.selfSessions || {};
-  req.app.locals.selfSessions[telegramId] = verificationData.sessionToken;
+  verificationLink = verificationData.verificationLink; // send direct link to bot
+  sessionToken = verificationData.sessionToken;
 
-  verificationLink = verificationData.qrDataURL; // QR only
-  // No need to return sessionToken
+  // Save sessionToken → telegramId mapping
+  saveSessionToken(sessionToken, telegramId);
 }
 
     res.json({
@@ -498,34 +497,26 @@ router.post('/self/register', async (req, res) => {
 router.get('/self/status/:telegramId', async (req, res) => {
   const { telegramId } = req.params;
 
-  const sessionToken = req.app.locals.selfSessions?.[telegramId];
-  if (!sessionToken) return res.status(404).json({ error: 'No verification session found' });
-
   try {
+    // Look up the latest sessionToken for this Telegram ID
+    const sessionToken = getSessionTokenByTelegramId(telegramId); // implement reverse lookup
+
+    if (!sessionToken) {
+      return res.json({ verified: false, message: 'No Self session found for this user.' });
+    }
+
     const status = await pollSelfVerificationStatus(sessionToken);
 
     if (status.stage === 'completed') {
       const user = getUserByTelegramId(telegramId);
-      if (!user?.self_verified) {
-        setUserVerified(telegramId, status.agentId);
-      }
-
-      return res.json({
-        verified: true,
-        stage: status.stage,
-        agentId: status.agentId,
-        humanAddress: status.humanAddress
-      });
+      if (!user.self_verified) setUserVerified(telegramId, status.agentId);
+      return res.json({ verified: true, stage: status.stage, agentId: status.agentId, humanAddress: status.humanAddress });
     }
 
-    return res.json({
-      verified: false,
-      stage: status.stage
-    });
-
+    res.json({ verified: false, stage: status.stage });
   } catch (err) {
     console.error('Error polling Self status:', err);
-    return res.status(500).json({ error: 'Failed to check verification status' });
+    res.status(500).json({ error: 'Failed to check verification status' });
   }
 });
 

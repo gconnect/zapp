@@ -30,13 +30,14 @@ export async function initiateSelfVerification(walletAddress) {
 
   const { sessionToken, deepLink, agentAddress } = await initRes.json();
 
-  // Generate QR code for frontend/bot
-  const qrDataURL = await QRCode.toDataURL(deepLink);
+  // Save sessionToken → telegramId mapping for polling
+  // You can call saveSessionToken() from self.js if needed
+  // saveSessionToken(sessionToken, telegramId); // called in onboard route
 
   return {
     agentAddress,
     sessionToken,
-    qrDataURL
+    verificationLink: deepLink // ✅ send this to user instead of qrDataURL
   };
 }
 
