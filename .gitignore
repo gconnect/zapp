@@ -38,3 +38,5 @@ npm-debug.log*
 # IDE
 .vscode/
 .idea/
+backend/db/*.sqlite-shm
+backend/db/*.sqlite-wal
