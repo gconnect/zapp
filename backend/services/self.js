@@ -10,6 +10,7 @@ import QRCode from 'qrcode';
 const SELF_NETWORK = 'testnet'; // or 'mainnet'
 
 const sessionMap = new Map();
+const linkMap = new Map();
 
 // ─── Step 1: Initiate Self Agent Registration ───────────────────────────────
 export async function initiateSelfVerification(walletAddress) {
@@ -30,14 +31,22 @@ export async function initiateSelfVerification(walletAddress) {
 
   const { sessionToken, deepLink, agentAddress } = await initRes.json();
 
-  // Save sessionToken → telegramId mapping for polling
-  // You can call saveSessionToken() from self.js if needed
-  // saveSessionToken(sessionToken, telegramId); // called in onboard route
+  // Generate QR Code for the deep link
+  const qrDataURL = await QRCode.toDataURL(deepLink, { width: 400, margin: 1 });
+
+  const shortId = crypto.randomBytes(8).toString('hex');
+  linkMap.set(shortId, deepLink);
+  // Also save the qrDataURL
+  linkMap.set(`qr_${sessionToken}`, qrDataURL);
+
+  const baseUrl = process.env.PUBLIC_URL || 'http://localhost:5500';
 
   return {
     agentAddress,
     sessionToken,
-    verificationLink: deepLink // ✅ send this to user instead of qrDataURL
+    verificationLink: `${baseUrl}/api/self/verify/${shortId}`,
+    qrDataURL,
+    qrCodeUrl: `${baseUrl}/api/self/qr/${sessionToken}`
   };
 }
 
@@ -78,4 +87,12 @@ export function saveSessionToken(sessionToken, telegramId) {
 
 export function getTelegramIdBySessionToken(sessionToken) {
   return sessionMap.get(sessionToken);
+}
+
+export function getLinkBySessionToken(sessionToken) {
+  return linkMap.get(sessionToken);
+}
+
+export function getQrDataURLBySessionToken(sessionToken) {
+  return linkMap.get(`qr_${sessionToken}`);
 }

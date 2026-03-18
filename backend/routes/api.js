@@ -12,11 +12,13 @@ import {
   setUserWallet, createTransaction, confirmTransaction, failTransaction,
   getTransactions, flagUser, resolveAlias, saveAlias
 } from '../db/index.js';
-import { 
+import {
   initiateSelfVerification,
   pollSelfVerificationStatus,
   saveSessionToken,
-  getTelegramIdBySessionToken
+  getTelegramIdBySessionToken,
+  getLinkBySessionToken,
+  getQrDataURLBySessionToken
 } from '../services/self.js';
 
 const db = getDB();
@@ -44,23 +46,26 @@ router.post('/onboard', async (req, res) => {
     // Start Self verification session only if not verified
     let verificationLink = null;
     let sessionToken = null;
+    let qrCode = null;
 
-   // in your /onboard route
-if (!user.self_verified) {
-  const verificationData = await initiateSelfVerification(user.wallet_address);
+    // in your /onboard route
+    if (!user.self_verified) {
+      const verificationData = await initiateSelfVerification(user.wallet_address);
 
-  verificationLink = verificationData.verificationLink; // send direct link to bot
-  sessionToken = verificationData.sessionToken;
+      verificationLink = verificationData.verificationLink; // send direct link to bot
+      sessionToken = verificationData.sessionToken;
+      qrCode = verificationData.qrCodeUrl;
 
-  // Save sessionToken → telegramId mapping
-  saveSessionToken(sessionToken, telegramId);
-}
+      // Save sessionToken → telegramId mapping
+      saveSessionToken(sessionToken, telegramId);
+    }
 
     res.json({
       isNewUser,
       isVerified: !!user.self_verified,
       walletAddress: user.wallet_address,
-      verificationLink: verificationData.deepLink,   // QR code
+      verificationLink,
+      qrCode,
       sessionToken,       // frontend/bot can use this to poll
       telegramName
     });
@@ -179,59 +184,59 @@ router.post('/split/equal', async (req, res) => {
     }
 
     // Execute on-chain or direct if no contract deployed
-   let txHash, explorerUrl;
+    let txHash, explorerUrl;
 
-if (process.env.SPLIT_PAYMENT_ADDRESS) {
-  if (token === 'cUSD') {
-    ({ txHash, explorerUrl } = await splitEqualOnChain({
-      fromPrivateKey: sender.wallet_private_key,
-      recipients: wallets,
-      totalAmount,
-      memo
-    }));
-  } else if (token === 'CELO') {
-    const perPerson = totalAmount / wallets.length;
-    const hashes = [];
-    for (const w of wallets) {
-      const r = await sendCELO({ fromPrivateKey: sender.wallet_private_key, toAddress: w, amountCelo: perPerson, memo });
-      hashes.push(r.txHash);
+    if (process.env.SPLIT_PAYMENT_ADDRESS) {
+      if (token === 'cUSD') {
+        ({ txHash, explorerUrl } = await splitEqualOnChain({
+          fromPrivateKey: sender.wallet_private_key,
+          recipients: wallets,
+          totalAmount,
+          memo
+        }));
+      } else if (token === 'CELO') {
+        const perPerson = totalAmount / wallets.length;
+        const hashes = [];
+        for (const w of wallets) {
+          const r = await sendCELO({ fromPrivateKey: sender.wallet_private_key, toAddress: w, amountCelo: perPerson, memo });
+          hashes.push(r.txHash);
+        }
+        txHash = hashes[0];
+        explorerUrl = getExplorerUrl(txHash);
+      } else {
+        return res.status(400).json({ error: 'Unsupported token. Only cUSD or CELO allowed.' });
+      }
+    } else {
+      // Fallback for no contract
+      if (token === 'cUSD') {
+        const perPerson = totalAmount / wallets.length;
+        const hashes = [];
+        for (const w of wallets) {
+          const r = await sendCUSD({ fromPrivateKey: sender.wallet_private_key, toAddress: w, amountCusd: perPerson, memo });
+          hashes.push(r.txHash);
+        }
+        txHash = hashes[0];
+        explorerUrl = getExplorerUrl(txHash);
+      } else if (token === 'CELO') {
+        const perPerson = totalAmount / wallets.length;
+        const hashes = [];
+        for (const w of wallets) {
+          const r = await sendCELO({ fromPrivateKey: sender.wallet_private_key, toAddress: w, amountCelo: perPerson, memo });
+          hashes.push(r.txHash);
+        }
+        txHash = hashes[0];
+        explorerUrl = getExplorerUrl(txHash);
+      } else {
+        return res.status(400).json({ error: 'Unsupported token. Only cUSD or CELO allowed.' });
+      }
     }
-    txHash = hashes[0];
-    explorerUrl = getExplorerUrl(txHash);
-  } else {
-    return res.status(400).json({ error: 'Unsupported token. Only cUSD or CELO allowed.' });
-  }
-} else {
-  // Fallback for no contract
-  if (token === 'cUSD') {
-    const perPerson = totalAmount / wallets.length;
-    const hashes = [];
-    for (const w of wallets) {
-      const r = await sendCUSD({ fromPrivateKey: sender.wallet_private_key, toAddress: w, amountCusd: perPerson, memo });
-      hashes.push(r.txHash);
-    }
-    txHash = hashes[0];
-    explorerUrl = getExplorerUrl(txHash);
-  } else if (token === 'CELO') {
-    const perPerson = totalAmount / wallets.length;
-    const hashes = [];
-    for (const w of wallets) {
-      const r = await sendCELO({ fromPrivateKey: sender.wallet_private_key, toAddress: w, amountCelo: perPerson, memo });
-      hashes.push(r.txHash);
-    }
-    txHash = hashes[0];
-    explorerUrl = getExplorerUrl(txHash);
-  } else {
-    return res.status(400).json({ error: 'Unsupported token. Only cUSD or CELO allowed.' });
-  }
-}
 
     createTransaction({
       txHash, txType: 'split',
       fromUserId: sender.id, toUserId: null,
       fromAddress: sender.wallet_address, toAddress: wallets.join(','),
-amountCusd: token === 'cUSD' ? parseFloat(totalAmount) : 0,
-amountCelo: token === 'CELO' ? parseFloat(totalAmount) : 0
+      amountCusd: token === 'cUSD' ? parseFloat(totalAmount) : 0,
+      amountCelo: token === 'CELO' ? parseFloat(totalAmount) : 0
     });
 
     res.json({ txHash, explorerUrl, recipients: recipientIdentifiers.length });
@@ -518,6 +523,36 @@ router.get('/self/status/:telegramId', async (req, res) => {
     console.error('Error polling Self status:', err);
     res.status(500).json({ error: 'Failed to check verification status' });
   }
+});
+
+router.get('/self/verify/:sessionToken', (req, res) => {
+  const { sessionToken } = req.params;
+  const deepLink = getLinkBySessionToken(sessionToken);
+
+  if (!deepLink) {
+    return res.status(404).send('Verification link expired or not found. Please type /start in the bot to generate a new one.');
+  }
+
+  res.redirect(deepLink);
+});
+
+router.get('/self/qr/:sessionToken', (req, res) => {
+  const { sessionToken } = req.params;
+  const qrDataURL = getQrDataURLBySessionToken(sessionToken);
+
+  if (!qrDataURL) {
+    return res.status(404).send('QR code not found for this session.');
+  }
+
+  // Convert base64 data URL to image buffer
+  const base64Data = qrDataURL.replace(/^data:image\/png;base64,/, "");
+  const img = Buffer.from(base64Data, 'base64');
+
+  res.writeHead(200, {
+    'Content-Type': 'image/png',
+    'Content-Length': img.length
+  });
+  res.end(img);
 });
 
 router.get('/self/status/:sessionToken', async (req, res) => {
