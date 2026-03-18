@@ -18,7 +18,8 @@ import {
   saveSessionToken,
   getTelegramIdBySessionToken,
   getLinkBySessionToken,
-  getQrDataURLBySessionToken
+  getQrDataURLBySessionToken,
+  getSessionTokenByTelegramId
 } from '../services/self.js';
 
 const db = getDB();

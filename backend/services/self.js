@@ -94,3 +94,12 @@ export function getLinkBySessionToken(sessionToken) {
 export function getQrDataURLBySessionToken(sessionToken) {
   return linkMap.get(`qr_${sessionToken}`);
 }
+
+export function getSessionTokenByTelegramId(telegramId) {
+  for (const [token, tid] of sessionMap.entries()) {
+    if (String(tid) === String(telegramId)) {
+      return token;
+    }
+  }
+  return null;
+}
