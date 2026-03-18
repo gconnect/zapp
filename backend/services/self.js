@@ -34,8 +34,6 @@ export async function initiateSelfVerification(walletAddress) {
   // Generate QR Code for the deep link
   const qrDataURL = await QRCode.toDataURL(deepLink, { width: 400, margin: 1 });
 
-  const shortId = crypto.randomBytes(8).toString('hex');
-  linkMap.set(shortId, deepLink);
   // Also save the qrDataURL
   linkMap.set(`qr_${sessionToken}`, qrDataURL);
 
@@ -44,7 +42,7 @@ export async function initiateSelfVerification(walletAddress) {
   return {
     agentAddress,
     sessionToken,
-    verificationLink: `${baseUrl}/api/self/verify/${shortId}`,
+    verificationLink: deepLink,
     qrDataURL,
     qrCodeUrl: `${baseUrl}/api/self/qr/${sessionToken}`
   };
