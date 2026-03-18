@@ -519,7 +519,8 @@ router.get('/self/status/:telegramId', async (req, res) => {
       return res.json({ verified: true, stage: status.stage, agentId: status.agentId, humanAddress: status.humanAddress });
     }
 
-    res.json({ verified: false, stage: status.stage });
+    const verificationLink = getLinkBySessionToken(sessionToken);
+    res.json({ verified: false, stage: status.stage, verificationLink });
   } catch (err) {
     console.error('Error polling Self status:', err);
     res.status(500).json({ error: 'Failed to check verification status' });
