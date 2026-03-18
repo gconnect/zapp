@@ -122,7 +122,7 @@ Reply YES to confirm or NO to cancel.
 ## ERROR HANDLING
 
 - Insufficient balance → "You need X cUSD but only have Y. Top up at [faucet link for testnet]"
-- User not found → "I couldn't find @[name]. Have they signed up for CeloPay?"
+- User not found → "I couldn't find @[name] on Zapp. Let them know you're trying to send them funds! Send them this invite link to register: https://t.me/YourZappBotName?start=invite"
 - Transaction failed → "Transaction failed on-chain. Try again or check your balance."
 - Network timeout → "Celo network is slow right now. I'll retry in 30 seconds."
 
