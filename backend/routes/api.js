@@ -60,7 +60,7 @@ if (!user.self_verified) {
       isNewUser,
       isVerified: !!user.self_verified,
       walletAddress: user.wallet_address,
-      verificationLink,   // QR code
+      verificationLink: verificationData.deepLink,   // QR code
       sessionToken,       // frontend/bot can use this to poll
       telegramName
     });
