@@ -96,10 +96,11 @@ export function getQrDataURLBySessionToken(sessionToken) {
 }
 
 export function getSessionTokenByTelegramId(telegramId) {
+  let latestToken = null;
   for (const [token, tid] of sessionMap.entries()) {
     if (String(tid) === String(telegramId)) {
-      return token;
+      latestToken = token;
     }
   }
-  return null;
+  return latestToken;
 }

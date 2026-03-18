@@ -30,7 +30,7 @@ function buildWelcome({ walletAddress, verificationLink, isNewUser, isVerified, 
   }
 
   if (!isNewUser && !isVerified) {
-    return `You're registered but need to complete verification:\n👆 ${verificationLink}`;
+    return `You're registered but need to complete verification:\n👆 [Click here to Verify Identity](${verificationLink})`;
   }
 
   return `👋 Welcome to *CeloPay*, ${telegramName || 'friend'}!
@@ -44,7 +44,7 @@ Your Celo wallet has been created:
 \`${walletAddress}\`
 
 *Before your first transaction*, please verify your identity:
-🔐 ${verificationLink}
+🔐 [Verify Identity Now](${verificationLink})
 
 _Powered by Self Protocol — your data stays private_`;
 }

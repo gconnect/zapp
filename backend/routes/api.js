@@ -10,7 +10,7 @@ import { createCircle, joinCircle, contribute, getCircleStatus, getUserCircles }
 import {
   getDB, upsertUser, getUserByTelegramId, getUserByUsername,
   setUserWallet, createTransaction, confirmTransaction, failTransaction,
-  getTransactions, flagUser, resolveAlias, saveAlias
+  getTransactions, flagUser, resolveAlias, saveAlias, setUserVerified
 } from '../db/index.js';
 import {
   initiateSelfVerification,
