@@ -1,6 +1,6 @@
 /**
  * split.js — CeloPay skill
- * Split cUSD equally or with custom amounts among multiple recipients
+ * Split USDC equally or with custom amounts among multiple recipients
  */
 
 const BACKEND = process.env.CELOPAY_BACKEND || 'http://localhost:3000';
@@ -19,7 +19,7 @@ export async function splitEqual({ fromTelegramId, recipientIdentifiers, totalAm
   return {
     txHash: data.txHash,
     explorerUrl: data.explorerUrl,
-    display: `✅ Split *${totalAmountCusd} cUSD* — *${perPerson} cUSD* each to ${recipientIdentifiers.length} people\n[View on Celoscan](${data.explorerUrl})`
+    display: `✅ Split *${totalAmountCusd} USDC* — *${perPerson} USDC* each to ${recipientIdentifiers.length} people\n[View on Celoscan](${data.explorerUrl})`
   };
 }
 
@@ -37,6 +37,6 @@ export async function splitCustom({ fromTelegramId, recipients, memo = '' }) {
   const total = recipients.reduce((sum, r) => sum + r.amount, 0).toFixed(2);
   return {
     txHash: data.txHash,
-    display: `✅ Split *${total} cUSD* across ${recipients.length} people\n[View on Celoscan](${data.explorerUrl})`
+    display: `✅ Split *${total} USDC* across ${recipients.length} people\n[View on Celoscan](${data.explorerUrl})`
   };
 }

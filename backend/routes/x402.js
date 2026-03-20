@@ -33,13 +33,13 @@ router.post('/verify', async (req, res) => {
 /**
  * GET /x402/demo
  * A demo x402-gated endpoint (returns a price feed)
- * Requires 0.001 cUSD payment to access
+ * Requires 0.001 USDC payment to access
  */
 router.get('/demo',
   requirePayment({ amount: '0.001', description: 'CeloPay price feed access' }),
   (req, res) => {
     res.json({
-      cUSD_USD: 1.00,
+      USDC_USD: 1.00,
       CELO_USD: 0.82,
       timestamp: new Date().toISOString(),
       source: 'celopay-oracle'

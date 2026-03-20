@@ -28,7 +28,7 @@ export function buildPaymentRequirement({ amount, currency = 'USDC', recipientAd
         mimeType: 'application/json',
         payTo: recipientAddress || process.env.AGENT_WALLET_ADDRESS,
         maxTimeoutSeconds: 300,
-        asset: process.env.CUSD_ADDRESS || '0xAd9a854784BD9e8e5E975e39cdFD34cA32dd7fEf',
+        asset: process.env.USDC_ADDRESS || '0xAd9a854784BD9e8e5E975e39cdFD34cA32dd7fEf',
         extra: { name: 'CeloPay API', version: '1' }
       }
     ],

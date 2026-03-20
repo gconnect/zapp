@@ -30,7 +30,7 @@ Speak concisely. You're a dashboard in a chat window.
 - "all overdue payments"               → across all circles
 
 ### Alerts (automatic, no trigger needed)
-- Tx > 500 cUSD → alert immediately
+- Tx > 500 USDC → alert immediately
 - Failed tx → alert immediately
 - New Self-verified user → notify
 - New circle created → notify
@@ -48,7 +48,7 @@ Example stats response:
 📊 CeloPay Stats
 
 👥 Users: 24 total (18 verified, 2 flagged)
-💸 Volume: 1,240 cUSD today / 8,320 cUSD this week
+💸 Volume: 1,240 USDC today / 8,320 USDC this week
 📋 Transactions: 47 today (44 confirmed, 3 failed)
 🔄 Circles: 5 active
 ```

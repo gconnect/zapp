@@ -14,4 +14,4 @@ Run every 15 minutes:
 Run every hour:
 
 3. Check for circles where members haven't paid with < 48 hours to payout:
-   - DM overdue members: "⏰ Reminder: Your [circle name] contribution of [amount] cUSD is due in 2 days!"
+   - DM overdue members: "⏰ Reminder: Your [circle name] contribution of [amount] USDC is due in 2 days!"

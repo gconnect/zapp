@@ -47,7 +47,7 @@ if (!user.self_verified) {
   db.addCircleMember(circleId, user.id);
 
   return {
-    message: `✅ You joined "${circle.name}"!\nContribution: ${circle.contribution_cusd} cUSD every ${circle.interval_days} days\nMembers: ${members.length + 1}/${circle.max_members}`
+    message: `✅ You joined "${circle.name}"!\nContribution: ${circle.contribution_cusd} USDC every ${circle.interval_days} days\nMembers: ${members.length + 1}/${circle.max_members}`
   };
 }
 
@@ -107,7 +107,7 @@ export async function contribute({ telegramId, circleId }) {
 
   return {
     txHash,
-    message: `✅ Contributed ${circle.contribution_cusd} cUSD to "${circle.name}" (Round ${round})${statusMsg}`
+    message: `✅ Contributed ${circle.contribution_cusd} USDC to "${circle.name}" (Round ${round})${statusMsg}`
   };
 }
 
@@ -128,10 +128,10 @@ export async function getCircleStatus(circleId) {
   const potSize = (circle.contribution_cusd * members.length).toFixed(2);
 
   let msg = `🔄 *${circle.name}* (Circle #${circleId})\n\n`;
-  msg += `💰 Contribution: ${circle.contribution_cusd} cUSD / ${circle.interval_days} days\n`;
+  msg += `💰 Contribution: ${circle.contribution_cusd} USDC / ${circle.interval_days} days\n`;
   msg += `👥 Members: ${members.length}/${circle.max_members}\n`;
   msg += `📍 Round: ${circle.current_round}\n`;
-  msg += `🏆 Pot: ${potSize} cUSD\n`;
+  msg += `🏆 Pot: ${potSize} USDC\n`;
   msg += `📅 Next payout: ${nextPayoutDate}\n\n`;
   msg += `✅ Paid this round: ${paidCount}/${members.length}\n`;
 
@@ -162,7 +162,7 @@ export async function getUserCircles(telegramId) {
   let msg = `🔄 *Your Esusu Circles*\n\n`;
   for (const c of myCircles) {
     const members = db.getCircleMembers(c.id);
-    msg += `• *${c.name}* (#${c.id}) — ${c.contribution_cusd} cUSD, Round ${c.current_round}/${members.length}\n`;
+    msg += `• *${c.name}* (#${c.id}) — ${c.contribution_cusd} USDC, Round ${c.current_round}/${members.length}\n`;
   }
 
   return { circles: myCircles, message: msg };
