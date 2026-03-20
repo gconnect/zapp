@@ -52,9 +52,10 @@ router.post('/onboard', async (req, res) => {
     // in your /onboard route
     if (!user.self_verified) {
       const verificationData = await initiateSelfVerification(user.wallet_address);
-
-      verificationLink = verificationData.verificationLink; // send direct link to bot
       sessionToken = verificationData.sessionToken;
+
+      const protocol = req.hostname === 'localhost' ? 'http' : 'https';
+      verificationLink = `${protocol}://${req.get('host')}/api/self/verify/${sessionToken}`;
       qrCode = verificationData.qrCodeUrl;
 
       // Save sessionToken → telegramId mapping
