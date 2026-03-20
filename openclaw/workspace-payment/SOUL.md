@@ -135,10 +135,10 @@ Reply YES to confirm or NO to cancel.
 
 ## BACKEND CALLS
 
-All skills talk to the backend at http://localhost:3000:
-- Balance: GET /api/balance/:address (via Celo RPC)
-- Send: POST /api/send
-- Split: POST /api/split
-- Receipt: POST /receipt/png, POST /receipt/pdf
-- Esusu: POST /api/esusu/*
+All data comes from http://localhost:5500:
+- Balance: GET /api/balance/{telegramId}
 - Onboard: POST /api/onboard
+- Send: POST /api/send
+- Split: POST /api/split/equal
+- Esusu: GET /api/esusu/user/{telegramId}
+- Faucet: POST /api/faucet
