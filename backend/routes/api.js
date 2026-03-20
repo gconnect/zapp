@@ -162,7 +162,7 @@ router.post('/send', async (req, res) => {
     // Check sender balance
     const balance = await getCUSDBalance(sender.wallet_address);
     if (parseFloat(balance.formatted) < parseFloat(amountCusd)) {
-      return res.status(400).json({ error: `Insufficient balance. You have ${balance.formatted} cUSD but need ${amountCusd}` });
+      return res.status(400).json({ error: `Insufficient balance. You have ${balance.formatted} USDC but need ${amountCusd}` });
     }
 
     // Execute transfer
@@ -201,7 +201,7 @@ router.post('/send', async (req, res) => {
 
 router.post('/split/equal', async (req, res) => {
   try {
-    const { fromTelegramId, recipientIdentifiers, totalAmount, token = 'cUSD', memo = '' } = req.body;
+    const { fromTelegramId, recipientIdentifiers, totalAmount, token = 'USDC', memo = '' } = req.body;
     if (!fromTelegramId || !recipientIdentifiers?.length || !totalAmountCusd) {
       return res.status(400).json({ error: 'fromTelegramId, recipientIdentifiers[], totalAmountCusd required' });
     }
@@ -222,7 +222,7 @@ router.post('/split/equal', async (req, res) => {
     let txHash, explorerUrl;
 
     if (process.env.SPLIT_PAYMENT_ADDRESS) {
-      if (token === 'cUSD') {
+      if (token === 'USDC') {
         ({ txHash, explorerUrl } = await splitEqualOnChain({
           fromPrivateKey: sender.wallet_private_key,
           recipients: wallets,
@@ -239,11 +239,11 @@ router.post('/split/equal', async (req, res) => {
         txHash = hashes[0];
         explorerUrl = getExplorerUrl(txHash);
       } else {
-        return res.status(400).json({ error: 'Unsupported token. Only cUSD or CELO allowed.' });
+        return res.status(400).json({ error: 'Unsupported token. Only USDC or CELO allowed.' });
       }
     } else {
       // Fallback for no contract
-      if (token === 'cUSD') {
+      if (token === 'USDC') {
         const perPerson = totalAmount / wallets.length;
         const hashes = [];
         for (const w of wallets) {
@@ -262,7 +262,7 @@ router.post('/split/equal', async (req, res) => {
         txHash = hashes[0];
         explorerUrl = getExplorerUrl(txHash);
       } else {
-        return res.status(400).json({ error: 'Unsupported token. Only cUSD or CELO allowed.' });
+        return res.status(400).json({ error: 'Unsupported token. Only USDC or CELO allowed.' });
       }
     }
 
@@ -270,7 +270,7 @@ router.post('/split/equal', async (req, res) => {
       txHash, txType: 'split',
       fromUserId: sender.id, toUserId: null,
       fromAddress: sender.wallet_address, toAddress: wallets.join(','),
-      amountCusd: token === 'cUSD' ? parseFloat(totalAmount) : 0,
+      amountCusd: token === 'USDC' ? parseFloat(totalAmount) : 0,
       amountCelo: token === 'CELO' ? parseFloat(totalAmount) : 0
     });
 
@@ -285,7 +285,7 @@ router.post('/split/equal', async (req, res) => {
 
 router.post('/split/custom', async (req, res) => {
   try {
-    const { fromTelegramId, recipients, token = 'cUSD', memo = '' } = req.body;
+    const { fromTelegramId, recipients, token = 'USDC', memo = '' } = req.body;
     if (!fromTelegramId || !recipients?.length) {
       return res.status(400).json({ error: 'fromTelegramId and recipients[] required' });
     }
@@ -313,14 +313,14 @@ router.post('/split/custom', async (req, res) => {
     // Execute on-chain transfers
     const hashes = [];
     for (const w of wallets) {
-      if (token === 'cUSD') {
+      if (token === 'USDC') {
         const r = await sendCUSD({ fromPrivateKey: sender.wallet_private_key, toAddress: w.wallet, amountCusd: w.amount, memo });
         hashes.push(r.txHash);
       } else if (token === 'CELO') {
         const r = await sendCELO({ fromPrivateKey: sender.wallet_private_key, toAddress: w.wallet, amountCelo: w.amount, memo });
         hashes.push(r.txHash);
       } else {
-        return res.status(400).json({ error: 'Unsupported token. Only cUSD or CELO allowed.' });
+        return res.status(400).json({ error: 'Unsupported token. Only USDC or CELO allowed.' });
       }
     }
 
@@ -333,7 +333,7 @@ router.post('/split/custom', async (req, res) => {
         txHash, txType: 'split_custom',
         fromUserId: sender.id, toUserId: null,
         fromAddress: sender.wallet_address, toAddress: w.wallet,
-        amountCusd: token === 'cUSD' ? parseFloat(w.amount) : 0,
+        amountCusd: token === 'USDC' ? parseFloat(w.amount) : 0,
         amountCelo: token === 'CELO' ? parseFloat(w.amount) : 0,
         memo
       });

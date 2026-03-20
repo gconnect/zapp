@@ -62,7 +62,7 @@ export async function generateReceiptPNG({ txHash, sender, receiver, amountCusd,
     // Amount — big and prominent
     ctx.fillStyle = '#FFFFFF';
     ctx.font = 'bold 42px Arial';
-    ctx.fillText(`${amountCusd} cUSD`, 40, 175);
+    ctx.fillText(`${amountCusd} USDC`, 40, 175);
 
     // Transaction details
     const details = [
@@ -147,7 +147,7 @@ export async function generateReceiptPDF({ txHash, sender, receiver, amountCusd,
     doc.moveTo(30, 58).lineTo(390, 58).strokeColor('#CCCCCC').stroke();
 
     // Amount
-    doc.fontSize(28).fillColor('#000000').font('Helvetica-Bold').text(`${amountCusd} cUSD`, 30, 68);
+    doc.fontSize(28).fillColor('#000000').font('Helvetica-Bold').text(`${amountCusd} USDC`, 30, 68);
 
     // Type badge
     const badgeColors = { send: '#238636', split: '#1F6FEB', esusu_contribute: '#8B5CF6' };

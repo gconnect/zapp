@@ -1,10 +1,10 @@
 # CeloPay
 
-Conversational Celo payment app on Telegram. Users send cUSD, split bills, and manage esusu savings circles by chatting with a bot — no app install required.
+Conversational Celo payment app on Telegram. Users send USDC, split bills, and manage esusu savings circles by chatting with a bot — no app install required.
 
 ## Stack
 - **Agent**: OpenClaw (3 agents: personal/Discord, payment/Telegram, admin/Telegram)
-- **Blockchain**: Celo Alfajores testnet (cUSD)
+- **Blockchain**: Celo Alfajores testnet (USDC)
 - **Identity**: Self Protocol (ZK verification)
 - **Payments**: x402 protocol for API gating
 - **Registry**: ERC-8004 agent identity
@@ -56,7 +56,7 @@ openclaw gateway restart
 ## User Commands (natural language)
 | Say | Action |
 |-----|--------|
-| "what's my balance" | Check cUSD balance |
+| "what's my balance" | Check USDC balance |
 | "send peter 5 cusd" | Send to @peter |
 | "split 100 btw james and john" | Equal split |
 | "my circles" | View esusu status |

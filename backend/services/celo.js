@@ -81,7 +81,7 @@ export function generateWallet() {
 
 export async function getCUSDBalance(address) {
   const client = getPublicClient();
-  const cusdAddress = process.env.CUSD_ADDRESS || '0xAd9a854784BD9e8e5E975e39cdFD34cA32dd7fEf';
+  const cusdAddress = process.env.USDC_ADDRESS || '0xAd9a854784BD9e8e5E975e39cdFD34cA32dd7fEf';
 
   const raw = await client.readContract({
     address: cusdAddress,
@@ -93,7 +93,7 @@ export async function getCUSDBalance(address) {
   return {
     raw,
     formatted: parseFloat(formatUnits(raw, 18)).toFixed(2),
-    display: `${parseFloat(formatUnits(raw, 18)).toFixed(2)} cUSD`
+    display: `${parseFloat(formatUnits(raw, 18)).toFixed(2)} USDC`
   };
 }
 
@@ -119,7 +119,7 @@ export async function sendCELO({ fromPrivateKey, toAddress, amountCelo }) {
 }
 
 export async function sendCUSD({ fromPrivateKey, toAddress, amountCusd, memo = '' }) {
-  const cusdAddress = process.env.CUSD_ADDRESS || '0xAd9a854784BD9e8e5E975e39cdFD34cA32dd7fEf';
+  const cusdAddress = process.env.USDC_ADDRESS || '0xAd9a854784BD9e8e5E975e39cdFD34cA32dd7fEf';
   const { client, account } = getWalletClient(fromPrivateKey);
   const amountWei = parseUnits(String(amountCusd), 18);
 
@@ -135,7 +135,7 @@ export async function sendCUSD({ fromPrivateKey, toAddress, amountCusd, memo = '
 }
 
 export async function approveCUSD({ fromPrivateKey, spenderAddress, amountCusd }) {
-  const cusdAddress = process.env.CUSD_ADDRESS || '0xAd9a854784BD9e8e5E975e39cdFD34cA32dd7fEf';
+  const cusdAddress = process.env.USDC_ADDRESS || '0xAd9a854784BD9e8e5E975e39cdFD34cA32dd7fEf';
   const { client, account } = getWalletClient(fromPrivateKey);
   const amountWei = parseUnits(String(amountCusd), 18);
 
@@ -151,7 +151,7 @@ export async function approveCUSD({ fromPrivateKey, spenderAddress, amountCusd }
 }
 
 export async function runFaucet(toAddress, amountCusd = 10) {
-  const cusdAddress = process.env.CUSD_ADDRESS || '0xAd9a854784BD9e8e5E975e39cdFD34cA32dd7fEf';
+  const cusdAddress = process.env.USDC_ADDRESS || '0xAd9a854784BD9e8e5E975e39cdFD34cA32dd7fEf';
   const privateKey = process.env.DEPLOYER_PRIVATE_KEY;
   if (!privateKey) throw new Error("Faucet funding wallet private key (DEPLOYER_PRIVATE_KEY) not set");
   
@@ -173,12 +173,12 @@ export async function runFaucet(toAddress, amountCusd = 10) {
 
 export async function splitEqualOnChain({ fromPrivateKey, recipients, totalAmountCusd, memo = '' }) {
   const splitAddress = process.env.SPLIT_PAYMENT_ADDRESS;
-  const cusdAddress = process.env.CUSD_ADDRESS || '0xAd9a854784BD9e8e5E975e39cdFD34cA32dd7fEf';
+  const cusdAddress = process.env.USDC_ADDRESS || '0xAd9a854784BD9e8e5E975e39cdFD34cA32dd7fEf';
   const abi = loadABI('SplitPayment');
   const { client, account } = getWalletClient(fromPrivateKey);
   const totalWei = parseUnits(String(totalAmountCusd), 18);
 
-  // Approve the split contract to spend cUSD
+  // Approve the split contract to spend USDC
   await approveCUSD({ fromPrivateKey, spenderAddress: splitAddress, amountCusd: totalAmountCusd });
 
   const hash = await client.writeContract({
@@ -196,7 +196,7 @@ export async function splitEqualOnChain({ fromPrivateKey, recipients, totalAmoun
 
 export async function contributeToCircle({ fromPrivateKey, contractCircleId, contributionCusd }) {
   const esusuAddress = process.env.ESUSU_CIRCLE_ADDRESS;
-  const cusdAddress = process.env.CUSD_ADDRESS || '0xAd9a854784BD9e8e5E975e39cdFD34cA32dd7fEf';
+  const cusdAddress = process.env.USDC_ADDRESS || '0xAd9a854784BD9e8e5E975e39cdFD34cA32dd7fEf';
   const abi = loadABI('EsusuCircle');
   const { client, account } = getWalletClient(fromPrivateKey);
 

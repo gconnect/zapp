@@ -36,7 +36,7 @@ function buildWelcome({ walletAddress, verificationLink, isNewUser, isVerified, 
   return `👋 Welcome to *CeloPay*, ${telegramName || 'friend'}!
 
 Here's what you can do:
-• 💸 Send cUSD to anyone on Telegram
+• 💸 Send USDC to anyone on Telegram
 • 🔀 Split bills instantly  
 • 🔄 Join esusu savings circles
 

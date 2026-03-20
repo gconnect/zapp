@@ -1,6 +1,6 @@
 /**
  * send.js — CeloPay skill
- * Send cUSD from one user to another
+ * Send USDC from one user to another
  */
 
 const BACKEND = process.env.CELOPAY_BACKEND || 'http://localhost:3000';
@@ -18,6 +18,6 @@ export async function sendCUSD({ fromTelegramId, toIdentifier, amountCusd, memo 
   return {
     txHash: data.txHash,
     explorerUrl: data.explorerUrl,
-    display: `✅ Sent *${amountCusd} cUSD* to *${data.recipientName || toIdentifier}*\n[View on Celoscan](${data.explorerUrl})`
+    display: `✅ Sent *${amountCusd} USDC* to *${data.recipientName || toIdentifier}*\n[View on Celoscan](${data.explorerUrl})`
   };
 }
