@@ -86,8 +86,7 @@ router.post('/onboard', async (req, res) => {
       const verificationData = await initiateSelfVerification(user.wallet_address);
       sessionToken = verificationData.sessionToken;
 
-      const protocol = req.hostname === 'localhost' ? 'http' : 'https';
-      const baseUrl = `${protocol}://${req.get('host')}`;
+      const baseUrl = (process.env.BACKEND_URL || 'http://localhost:5500').replace(/\/$/,  '');
       
       const shortId = crypto.randomBytes(6).toString('hex');
       simpleLinkMap.set(shortId, sessionToken);
