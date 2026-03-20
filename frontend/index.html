@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Zapp | Send Money as Easy as Sending a Message</title>
   <link rel="icon" type="image/png" href="/favicon.png">
+  <link rel="apple-touch-icon" href="/favicon.png">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     :root {
@@ -103,8 +104,10 @@
       filter: blur(40px);
     }
 
-    .hero h1 { font-size: clamp(3rem, 6vw, 5.5rem); margin-bottom: 24px; }
-    .hero p { max-width: 600px; margin: 0 auto 40px auto; font-size: 1.25rem; }
+    .hero h1 { font-size: clamp(2.5rem, 8vw, 5.5rem); margin-bottom: 24px; letter-spacing: -0.03em; }
+    .hero p { max-width: 600px; margin: 0 auto 40px auto; font-size: 1.2rem; }
+
+    .desktop-br { display: inline; }
 
     .tokens-badge {
       display: inline-flex;
@@ -226,6 +229,9 @@
 
     /* Responsive */
     @media (max-width: 900px) {
+      .desktop-br { display: none; }
+      .hero h1 { font-size: clamp(2.5rem, 11vw, 3rem); padding: 0 10px; }
+      .hero p { font-size: 1rem; padding: 0 15px; }
       .features-grid { grid-template-columns: 1fr; }
       .feature-item:nth-child(2), .feature-item:nth-child(3) { transform: none; }
     }
@@ -250,7 +256,7 @@
   <section class="hero">
     <div class="hero-glow"></div>
     <div class="container fade-up">
-      <h1>Send money as easy <br> as <span class="gradient-text">sending a message.</span></h1>
+      <h1>Send money as easy <span class="desktop-br"><br></span> as <span class="gradient-text">sending a message.</span></h1>
       <p>A conversational payments app natively built on Telegram. Powered by the <strong>OpenClaw AI Agent</strong>, <strong>Self Agent ID</strong>, <strong style="white-space: nowrap;">ERC-8004</strong>, and <strong>x402</strong> standards via the Celo blockchain for instant, near-zero fee global stablecoin transfers.</p>
       <a href="https://t.me/ZappAgent_bot" class="cta-btn" target="_blank" rel="noopener noreferrer">
         Start Chat on Telegram
