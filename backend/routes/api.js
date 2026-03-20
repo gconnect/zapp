@@ -55,8 +55,9 @@ router.post('/onboard', async (req, res) => {
       sessionToken = verificationData.sessionToken;
 
       const protocol = req.hostname === 'localhost' ? 'http' : 'https';
-      verificationLink = `${protocol}://${req.get('host')}/api/self/verify/${sessionToken}`;
-      qrCode = verificationData.qrCodeUrl;
+      const baseUrl = `${protocol}://${req.get('host')}`;
+      verificationLink = `${baseUrl}/api/self/verify/${sessionToken}`;
+      qrCode = `${baseUrl}/api/self/qr/${sessionToken}`;
 
       // Save sessionToken → telegramId mapping
       saveSessionToken(sessionToken, telegramId);
