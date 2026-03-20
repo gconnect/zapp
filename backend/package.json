@@ -19,6 +19,8 @@
     "express": "^4.18.0",
     "pdfkit": "^0.14.0",
     "qrcode": "^1.5.3",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1",
     "viem": "^2.17.0"
   }
 }

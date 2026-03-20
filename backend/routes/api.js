@@ -31,6 +31,35 @@ const router = Router();
 
 // ─── Onboarding ──────────────────────────────────────────────────────────────
 
+/**
+ * @swagger
+ * /api/onboard:
+ *   post:
+ *     summary: Onboard a new user or get existing user details
+ *     description: Registers a user, generates a Celo wallet if they don't have one, and starts a Self verification session.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - telegramId
+ *             properties:
+ *               telegramId:
+ *                 type: string
+ *               telegramUsername:
+ *                 type: string
+ *               telegramName:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: User onboarded successfully
+ *       400:
+ *         description: Bad request
+ *       500:
+ *         description: Internal server error
+ */
 router.post('/onboard', async (req, res) => {
   try {
     const { telegramId, telegramUsername, telegramName } = req.body;
@@ -87,6 +116,29 @@ router.post('/onboard', async (req, res) => {
 
 // ─── Balance ─────────────────────────────────────────────────────────────────
 
+/**
+ * @swagger
+ * /api/balance/{telegramId}:
+ *   get:
+ *     summary: Get user's cUSD balance
+ *     description: Retrieves the current cUSD and CELO balances for a registered user's wallet.
+ *     parameters:
+ *       - in: path
+ *         name: telegramId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The user's Telegram ID
+ *     responses:
+ *       200:
+ *         description: Balance retrieved successfully
+ *       400:
+ *         description: User has no wallet setup
+ *       404:
+ *         description: User not found
+ *       500:
+ *         description: Internal server error
+ */
 router.get('/balance/:telegramId', async (req, res) => {
   try {
     const user = getUserByTelegramId(req.params.telegramId);
@@ -103,6 +155,35 @@ router.get('/balance/:telegramId', async (req, res) => {
 
 // ─── Faucet ──────────────────────────────────────────────────────────────────
 
+/**
+ * @swagger
+ * /api/faucet:
+ *   post:
+ *     summary: Request testnet USDC funds
+ *     description: Funds a user's wallet with 10 testnet USDC on Celo Sepolia (Rate limited to once per 24h).
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - telegramId
+ *             properties:
+ *               telegramId:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Funds deposited successfully
+ *       400:
+ *         description: Bad request (missing params or wallet)
+ *       404:
+ *         description: User not found
+ *       429:
+ *         description: Rate limit exceeded
+ *       500:
+ *         description: Internal server error
+ */
 router.post('/faucet', async (req, res) => {
   try {
     const { telegramId } = req.body;
@@ -137,6 +218,43 @@ router.post('/faucet', async (req, res) => {
 
 // ─── Send ─────────────────────────────────────────────────────────────────────
 
+/**
+ * @swagger
+ * /api/send:
+ *   post:
+ *     summary: Send cUSD to another user
+ *     description: Executes an on-chain transfer of cUSD to a specified recipient. Sender MUST be self_verified.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - fromTelegramId
+ *               - toIdentifier
+ *               - amountCusd
+ *             properties:
+ *               fromTelegramId:
+ *                 type: string
+ *               toIdentifier:
+ *                 type: string
+ *               amountCusd:
+ *                 type: string
+ *               memo:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Transaction initiated and confirmed
+ *       400:
+ *         description: Insufficient balance or invalid wallet
+ *       403:
+ *         description: Sender is not verified
+ *       404:
+ *         description: Recipient not found
+ *       500:
+ *         description: Internal server error
+ */
 router.post('/send', async (req, res) => {
   try {
     const { fromTelegramId, toIdentifier, amountCusd, memo = '' } = req.body;
@@ -208,6 +326,48 @@ router.post('/send', async (req, res) => {
 
 // ─── Split Equal ──────────────────────────────────────────────────────────────
 
+/**
+ * @swagger
+ * /api/split/equal:
+ *   post:
+ *     summary: Split payment equally among recipients
+ *     description: Divides a total amount evenly across multiple specified recipients on chain.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - fromTelegramId
+ *               - recipientIdentifiers
+ *               - totalAmount
+ *             properties:
+ *               fromTelegramId:
+ *                 type: string
+ *               recipientIdentifiers:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *               totalAmount:
+ *                 type: string
+ *               token:
+ *                 type: string
+ *                 default: 'USDC'
+ *               memo:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Split executed successfully
+ *       400:
+ *         description: Bad request
+ *       403:
+ *         description: Verification required
+ *       404:
+ *         description: Sender or recipient not found
+ *       500:
+ *         description: Internal server error
+ */
 router.post('/split/equal', async (req, res) => {
   try {
     const { fromTelegramId, recipientIdentifiers, totalAmount, token = 'USDC', memo = '' } = req.body;
@@ -292,6 +452,50 @@ router.post('/split/equal', async (req, res) => {
 
 // ─── Split Custom ─────────────────────────────────────────────────────────────
 
+/**
+ * @swagger
+ * /api/split/custom:
+ *   post:
+ *     summary: Split payment custom amounts
+ *     description: Executes multiple transfers with specific custom amounts to multiple recipients.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - fromTelegramId
+ *               - recipients
+ *             properties:
+ *               fromTelegramId:
+ *                 type: string
+ *               recipients:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *                   properties:
+ *                     identifier:
+ *                       type: string
+ *                     amount:
+ *                       type: number
+ *               token:
+ *                 type: string
+ *                 default: 'USDC'
+ *               memo:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Split executed successfully
+ *       400:
+ *         description: Bad request
+ *       403:
+ *         description: Verification required
+ *       404:
+ *         description: Sender or recipient not found
+ *       500:
+ *         description: Internal server error
+ */
 router.post('/split/custom', async (req, res) => {
   try {
     const { fromTelegramId, recipients, token = 'USDC', memo = '' } = req.body;
@@ -399,6 +603,24 @@ router.get('/esusu/:circleId/status', async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/esusu/user/{telegramId}:
+ *   get:
+ *     summary: Get user's active Esusu cycles
+ *     description: Returns a list of Esusu savings circles the user is participating in.
+ *     parameters:
+ *       - in: path
+ *         name: telegramId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Successfully retrieved circles
+ *       500:
+ *         description: Internal server error
+ */
 router.get('/esusu/user/:telegramId', async (req, res) => {
   try {
     const result = await getUserCircles(req.params.telegramId);
@@ -457,6 +679,28 @@ router.get('/admin/circles', adminAuth, async (req, res) => {
 
 // ─── CELO Native Balance ──────────────────────────────────────────────────────
 
+/**
+ * @swagger
+ * /api/celo/balance/{telegramId}:
+ *   get:
+ *     summary: Get user's CELO balance
+ *     description: Retrieves the native CELO balance for a specified user's wallet.
+ *     parameters:
+ *       - in: path
+ *         name: telegramId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Successfully retrieved balance
+ *       400:
+ *         description: Bad request
+ *       404:
+ *         description: User not found
+ *       500:
+ *         description: Internal server error
+ */
 router.get('/celo/balance/:telegramId', async (req, res) => {
   try {
     const user = getUserByTelegramId(req.params.telegramId);
@@ -472,6 +716,41 @@ router.get('/celo/balance/:telegramId', async (req, res) => {
 
 // ─── Send Native CELO ─────────────────────────────────────────────────────────
 
+/**
+ * @swagger
+ * /api/celo/send:
+ *   post:
+ *     summary: Send native CELO
+ *     description: Executes an on-chain transfer of CELO tokens.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - fromTelegramId
+ *               - toIdentifier
+ *               - amountCelo
+ *             properties:
+ *               fromTelegramId:
+ *                 type: string
+ *               toIdentifier:
+ *                 type: string
+ *               amountCelo:
+ *                 type: string
+ *               memo:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Transaction initiated and confirmed
+ *       400:
+ *         description: Bad request or insufficient balance
+ *       404:
+ *         description: User not found
+ *       500:
+ *         description: Internal server error
+ */
 router.post('/celo/send', async (req, res) => {
   try {
     const { fromTelegramId, toIdentifier, amountCelo, memo = '' } = req.body;
@@ -543,6 +822,24 @@ router.post('/self/register', async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/self/status/{telegramId}:
+ *   get:
+ *     summary: Check Self verification status
+ *     description: Checks if the user has completed their decentralized identity verification.
+ *     parameters:
+ *       - in: path
+ *         name: telegramId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Verification status mapping
+ *       500:
+ *         description: Internal server error
+ */
 router.get('/self/status/:telegramId', async (req, res) => {
   const { telegramId } = req.params;
 

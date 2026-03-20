@@ -5,8 +5,32 @@ import { getUserByTelegramId } from '../db/index.js';
 const router = Router();
 
 /**
- * POST /verify
- * Start Self verification: returns QR + sessionToken for frontend/bot
+ * @swagger
+ * /verify:
+ *   post:
+ *     summary: Initialize Self UI verification
+ *     description: Starts a new Self Identity session explicitly for the frontend UI. Returns a QR code and session token.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - telegramUserId
+ *               - walletAddress
+ *             properties:
+ *               telegramUserId:
+ *                 type: string
+ *               walletAddress:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Verification session initiated successfully
+ *       404:
+ *         description: User not found
+ *       500:
+ *         description: Internal server error
  */
 router.post('/', async (req, res) => {
   try {

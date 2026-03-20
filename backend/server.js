@@ -16,6 +16,8 @@ import verifyRoutes  from './routes/verify.js';
 import receiptRoutes from './routes/receipt.js';
 import x402Routes   from './routes/x402.js';
 import apiRoutes     from './routes/api.js';
+import swaggerUi from 'swagger-ui-express';
+import { swaggerSpec } from './swagger.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -39,6 +41,9 @@ app.use('/verify',  verifyRoutes);
 app.use('/receipt', receiptRoutes);
 app.use('/x402',    x402Routes);
 app.use('/api',     apiRoutes);
+
+// Swagger Documentation UI
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, { explorer: true }));
 
 // Health check
 app.get('/health', (req, res) => {
