@@ -37,7 +37,7 @@ export async function initiateSelfVerification(walletAddress) {
   // Also save the qrDataURL
   linkMap.set(`qr_${sessionToken}`, qrDataURL);
 
-  const baseUrl = process.env.BACKEND_URL || 'http://localhost:5500';
+  const baseUrl = process.env.BACKEND_URL || 'https://zapp.africinnovate.com/';
 
   return {
     agentAddress,
