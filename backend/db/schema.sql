@@ -124,3 +124,9 @@ ON users(self_verified);
 
 CREATE INDEX IF NOT EXISTS idx_users_self_nullifier
 ON users(self_nullifier);
+
+-- ─── Faucet Requests ────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS faucet_requests (
+  telegram_id TEXT PRIMARY KEY,
+  last_request DATETIME DEFAULT CURRENT_TIMESTAMP
+);

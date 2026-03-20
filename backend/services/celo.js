@@ -150,6 +150,25 @@ export async function approveCUSD({ fromPrivateKey, spenderAddress, amountCusd }
   return { txHash: hash };
 }
 
+export async function runFaucet(toAddress, amountCusd = 10) {
+  const cusdAddress = process.env.CUSD_ADDRESS || '0xAd9a854784BD9e8e5E975e39cdFD34cA32dd7fEf';
+  const privateKey = process.env.DEPLOYER_PRIVATE_KEY;
+  if (!privateKey) throw new Error("Faucet funding wallet private key (DEPLOYER_PRIVATE_KEY) not set");
+  
+  const { client, account } = getWalletClient(privateKey);
+  const amountWei = parseUnits(String(amountCusd), 18);
+
+  const hash = await client.writeContract({
+    account,
+    address: cusdAddress,
+    abi: ERC20_ABI,
+    functionName: 'transfer',
+    args: [toAddress, amountWei]
+  });
+
+  return { txHash: hash, explorerUrl: `https://celo-sepolia.blockscout.com/tx/${hash}` };
+}
+
 // ─── SplitPayment Contract ───────────────────────────────────────────────────
 
 export async function splitEqualOnChain({ fromPrivateKey, recipients, totalAmountCusd, memo = '' }) {

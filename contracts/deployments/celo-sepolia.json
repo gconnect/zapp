@@ -15,5 +15,5 @@
       "abi": "CeloPayRegistry.json"
     }
   },
-  "cUSD": "local-mock"
+  "cUSD": "0x7eE404CC53c1cdAd82dB9627d18e96fe16C3C823"
 }

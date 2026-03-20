@@ -4,13 +4,13 @@
  */
 
 import { Router } from 'express';
-import { getCUSDBalance, sendCUSD, splitEqualOnChain, generateWallet, waitForTransaction, getExplorerUrl, getCELOBalance, sendCELO } from '../services/celo.js';
+import { getCUSDBalance, sendCUSD, splitEqualOnChain, generateWallet, waitForTransaction, getExplorerUrl, getCELOBalance, sendCELO, runFaucet } from '../services/celo.js';
 import { generateReceiptPNG, generateReceiptPDF } from '../services/receipt.js';
 import { createCircle, joinCircle, contribute, getCircleStatus, getUserCircles } from '../services/esusu.js';
 import {
   getDB, upsertUser, getUserByTelegramId, getUserByUsername,
   setUserWallet, createTransaction, confirmTransaction, failTransaction,
-  getTransactions, flagUser, resolveAlias, saveAlias, setUserVerified
+  getTransactions, flagUser, resolveAlias, saveAlias, setUserVerified, checkFaucetRateLimit, updateFaucetRequest
 } from '../db/index.js';
 import {
   initiateSelfVerification,
@@ -88,6 +88,40 @@ router.get('/balance/:telegramId', async (req, res) => {
     res.json({ balance: balance.formatted, address: user.wallet_address, raw: balance.raw.toString() });
   } catch (err) {
     console.error('Balance error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ─── Faucet ──────────────────────────────────────────────────────────────────
+
+router.post('/faucet', async (req, res) => {
+  try {
+    const { telegramId } = req.body;
+    if (!telegramId) return res.status(400).json({ error: 'telegramId required' });
+
+    const user = getUserByTelegramId(String(telegramId));
+    if (!user) return res.status(404).json({ error: 'User not found. Use /start to register.' });
+    if (!user.wallet_address) return res.status(400).json({ error: 'No wallet found. Use /start to set up.' });
+
+    // Enforce Rate Limit
+    if (!checkFaucetRateLimit(String(telegramId))) {
+      return res.status(429).json({ error: 'Rate limit exceeded. You can only request testnet USDC once every 24 hours.' });
+    }
+
+    const { txHash, explorerUrl } = await runFaucet(user.wallet_address, 10);
+    
+    // Update rate limit record
+    updateFaucetRequest(String(telegramId));
+
+    res.json({
+      amount: 10,
+      asset: 'USDC',
+      txHash,
+      explorerUrl,
+      message: '10 USDC has been deposited to your wallet.'
+    });
+  } catch (err) {
+    console.error('Faucet error:', err);
     res.status(500).json({ error: err.message });
   }
 });

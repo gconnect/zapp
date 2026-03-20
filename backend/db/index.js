@@ -190,3 +190,31 @@ export function saveAlias(ownerUserId, alias, targetUserId, walletAddress) {
     ON CONFLICT(owner_user_id, alias) DO UPDATE SET target_user_id = excluded.target_user_id, wallet_address = excluded.wallet_address
   `).run(ownerUserId, alias, targetUserId || null, walletAddress || null);
 }
+
+// ─── Faucet Operations ───────────────────────────────────────────────────────
+
+export function getFaucetLastRequest(telegramId) {
+  const row = getDB().prepare('SELECT last_request FROM faucet_requests WHERE telegram_id = ?').get(telegramId);
+  return row ? new Date(row.last_request + 'Z') : null; // SQLite stores locally without timezone, appending Z depends. Let's rely on SQLite's CURRENT_TIMESTAMP being UTC.
+}
+
+export function checkFaucetRateLimit(telegramId) {
+  const row = getDB().prepare('SELECT last_request FROM faucet_requests WHERE telegram_id = ?').get(telegramId);
+  if (!row) return true;
+  // SQLite CURRENT_TIMESTAMP is in UTC typically
+  const last = new Date(row.last_request + 'Z').getTime();
+  const now = Date.now();
+  // Limit to once every 24 hours
+  if (now - last < 24 * 60 * 60 * 1000) {
+    return false;
+  }
+  return true;
+}
+
+export function updateFaucetRequest(telegramId) {
+  return getDB().prepare(`
+    INSERT INTO faucet_requests (telegram_id, last_request)
+    VALUES (?, CURRENT_TIMESTAMP)
+    ON CONFLICT(telegram_id) DO UPDATE SET last_request = CURRENT_TIMESTAMP
+  `).run(telegramId);
+}

@@ -79,6 +79,11 @@ Triggers: "save [name] as [address/@username]", "add [name] to contacts"
 Triggers: "help", "/start", "/help", "what can you do"
 → Show command list
 
+### Faucet
+Triggers: "faucet", "/faucet", "give me test tokens", "request usdc"
+→ Call `faucet` skill
+→ Inform the user if successful or rate-limited
+
 ---
 
 ## TRANSACTION RULES
