@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Zapp | Send Money as Easy as Sending a Message</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --celo-purple: #6C3CE1;
+      --celo-green: #00E676;
+      --dark-bg: #0d0f14;
+      --card-bg: rgba(255, 255, 255, 0.03);
+      --border-color: rgba(255, 255, 255, 0.08);
+      --text-muted: #9ba0aa;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Inter', sans-serif;
+    }
+
+    body {
+      background-color: var(--dark-bg);
+      color: #fff;
+      overflow-x: hidden;
+    }
+
+    /* Typography */
+    h1, h2, h3 { font-weight: 800; line-height: 1.2; letter-spacing: -0.02em; }
+    p { color: var(--text-muted); font-size: 1.125rem; }
+
+    .gradient-text {
+      background: linear-gradient(135deg, var(--celo-purple), var(--celo-green));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    /* Buttons */
+    .cta-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      padding: 16px 36px;
+      background: linear-gradient(135deg, var(--celo-purple), var(--celo-green));
+      color: #fff;
+      text-decoration: none;
+      font-size: 1.125rem;
+      font-weight: 700;
+      border-radius: 9999px;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+      border: none;
+      cursor: pointer;
+    }
+
+    .cta-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 30px rgba(0, 230, 118, 0.3);
+    }
+
+    .cta-btn::after {
+      content: '';
+      position: absolute;
+      top: 0; left: -100%; width: 50%; height: 100%;
+      background: linear-gradient(to right, transparent, rgba(255,255,255,0.3), transparent);
+      transform: skewX(-20deg);
+      transition: left 0.5s ease;
+    }
+    .cta-btn:hover::after { left: 150%; }
+
+    /* Layout */
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* Section: Hero */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      position: relative;
+      padding-top: 80px;
+      padding-bottom: 80px;
+    }
+
+    .hero-glow {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 600px; height: 600px;
+      background: radial-gradient(circle, rgba(108, 60, 225, 0.15) 0%, rgba(0, 230, 118, 0.05) 50%, transparent 70%);
+      z-index: -1;
+      filter: blur(40px);
+    }
+
+    .hero h1 { font-size: clamp(3rem, 6vw, 5.5rem); margin-bottom: 24px; }
+    .hero p { max-width: 600px; margin: 0 auto 40px auto; font-size: 1.25rem; }
+
+    .tokens-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      padding: 8px 24px;
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 999px;
+      margin-top: 48px;
+      font-size: 0.875rem;
+      font-weight: 600;
+    }
+
+    /* Section: Steps */
+    .how-it-works { padding: 120px 0; background: #0a0b0f; }
+    .section-header { text-align: center; margin-bottom: 80px; }
+    .section-header h2 { font-size: clamp(2rem, 4vw, 3rem); margin-bottom: 16px; }
+
+    .steps-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 32px;
+      position: relative;
+    }
+
+    .step-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      padding: 40px;
+      border-radius: 24px;
+      text-align: center;
+      transition: transform 0.3s ease, border-color 0.3s ease;
+      position: relative;
+      z-index: 1;
+    }
+
+    .step-card:hover {
+      transform: translateY(-8px);
+      border-color: rgba(255,255,255,0.2);
+    }
+
+    .step-icon {
+      font-size: 3rem;
+      margin-bottom: 24px;
+      display: inline-block;
+      text-shadow: 0 0 20px rgba(0,230,118,0.4);
+    }
+
+    .step-card h3 { font-size: 1.5rem; margin-bottom: 16px; }
+    .step-card p { font-size: 1rem; }
+
+    /* Section: Features */
+    .features { padding: 120px 0; }
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 24px;
+    }
+
+    .feature-item {
+      padding: 40px;
+      background: linear-gradient(180deg, var(--card-bg), transparent);
+      border: 1px solid var(--border-color);
+      border-radius: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      transition: all 0.3s ease;
+    }
+
+    .feature-item:nth-child(2), .feature-item:nth-child(3) {
+      transform: translateY(40px);
+    }
+
+    .feature-item:hover {
+      background: rgba(255,255,255,0.05);
+      border-color: rgba(0, 230, 118, 0.3);
+    }
+
+    .feature-icon-wrapper {
+      width: 56px; height: 56px;
+      border-radius: 16px;
+      background: rgba(108, 60, 225, 0.1);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.5rem;
+      border: 1px solid rgba(108, 60, 225, 0.2);
+    }
+
+    /* Section: CTA Full Width */
+    .cta-banner {
+      padding: 120px 0;
+      text-align: center;
+      background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%"><defs><pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(255,255,255,0.03)" stroke-width="1"/></pattern></defs><rect width="100%" height="100%" fill="url(%23grid)" /></svg>');
+      position: relative;
+    }
+    
+    .cta-banner h2 { font-size: clamp(2.5rem, 5vw, 4rem); margin-bottom: 40px; }
+
+    /* Footer */
+    footer {
+      padding: 40px 0;
+      text-align: center;
+      border-top: 1px solid var(--border-color);
+    }
+
+    .footer-content { color: var(--text-muted); font-size: 0.9rem; font-weight: 500;}
+
+    /* Animations */
+    .fade-up {
+      opacity: 0;
+      transform: translateY(40px);
+      transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+    }
+    .fade-up.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* Responsive */
+    @media (max-width: 900px) {
+      .features-grid { grid-template-columns: 1fr; }
+      .feature-item:nth-child(2), .feature-item:nth-child(3) { transform: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Optional API Status script representing backend root -->
+  <script>
+    const API_BASE_URL = 'https://zapp.africinnovate.com';
+    // The frontend implicitly points to the root of the API via interactions.
+    // E.g., fetch(`${API_BASE_URL}/api/health`).then(...) -> console.log('API is alive!');
+  </script>
+
+  <nav style="position: absolute; top: 0; left: 0; width: 100%; padding: 24px; z-index: 10;">
+    <div class="container" style="display: flex; justify-content: space-between; align-items: center;">
+      <h2 style="letter-spacing: -2px;">Zapp<span style="color:var(--celo-green)">.</span></h2>
+      <a href="https://t.me/ZappAgent_bot" style="color: #fff; text-decoration: none; font-weight: 600; font-size: 0.9rem; padding: 10px 20px; border-radius: 999px; background: rgba(255,255,255,0.1);">Open App</a>
+    </div>
+  </nav>
+
+  <section class="hero">
+    <div class="hero-glow"></div>
+    <div class="container fade-up">
+      <h1>Send money as easy <br> as <span class="gradient-text">sending a message.</span></h1>
+      <p>A conversational payments app natively built on Telegram. Powered by the Celo blockchain for instant, near-zero fee global stablecoin transfers.</p>
+      <a href="https://t.me/ZappAgent_bot" class="cta-btn" target="_blank" rel="noopener noreferrer">
+        Start Chat on Telegram
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+      </a>
+      
+      <div class="tokens-badge">
+        <span style="display:flex; gap: 8px;">🟢 CELO</span>
+        <span style="opacity: 0.3;">|</span>
+        <span style="display:flex; gap: 8px;">🔵 USDC</span>
+        <span style="opacity: 0.3;">|</span>
+        <span>Powered by Celo Blockchain</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="how-it-works" id="how">
+    <div class="container">
+      <div class="section-header fade-up">
+        <h2>How it <span class="gradient-text">works</span></h2>
+        <p>Three simple steps to financial freedom on messenger.</p>
+      </div>
+
+      <div class="steps-grid">
+        <div class="step-card fade-up" style="transition-delay: 0.1s;">
+          <div class="step-icon">💬</div>
+          <h3>Start a Chat</h3>
+          <p>Find @ZappAgent_bot on Telegram and say hi. We automatically generate a secure Celo wallet linked strictly to your account.</p>
+        </div>
+        
+        <div class="step-card fade-up" style="transition-delay: 0.2s;">
+          <div class="step-icon">🔐</div>
+          <h3>Verify Identity</h3>
+          <p>Complete a quick verification with Self Protocol to verify your identity. Your data stays completely private and off-chain.</p>
+        </div>
+
+        <div class="step-card fade-up" style="transition-delay: 0.3s;">
+          <div class="step-icon">💸</div>
+          <h3>Send & Split</h3>
+          <p>Just type "Send 5 cUSD to @friend" or "Split 50 CELO with @james and @mary." Zapp handles all the blockchain complexity.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="features">
+    <div class="container">
+      <div class="section-header fade-up">
+        <h2>Built for <span class="gradient-text">Africa & beyond</span></h2>
+      </div>
+
+      <div class="features-grid">
+        <div class="feature-item fade-up" style="transition-delay: 0.1s;">
+          <div class="feature-icon-wrapper">🌍</div>
+          <h3>Send CELO & USDC</h3>
+          <p>Transfer native CELO or stable USDC directly to any Telegram username instantly, regardless of borders.</p>
+        </div>
+        
+        <div class="feature-item fade-up" style="transition-delay: 0.2s;">
+          <div class="feature-icon-wrapper">🔀</div>
+          <h3>Instant Bill Splitting</h3>
+          <p>No more calculators. Ask Zapp to split a bill between any number of friends and it will execute the transactions perfectly.</p>
+        </div>
+
+        <div class="feature-item fade-up" style="transition-delay: 0.3s;">
+          <div class="feature-icon-wrapper">🔄</div>
+          <h3>Esusu Savings Circles</h3>
+          <p>Save together natively in Telegram. Start digital Ajo/Esusu circles, manage contributions, and automate payout distributions securely.</p>
+        </div>
+
+        <div class="feature-item fade-up" style="transition-delay: 0.4s;">
+          <div class="feature-icon-wrapper">🛡️</div>
+          <h3>Fraud-Proof Security</h3>
+          <p>Leveraging Self Protocol's decentralized ID, transactions are securely locked down to verified humans, eliminating sybil attacks and bots.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="cta-banner">
+    <div class="hero-glow" style="width: 800px; height: 800px; opacity: 0.5;"></div>
+    <div class="container fade-up">
+      <h2 style="font-weight: 800;">Ready to send money<br>the <span class="gradient-text">smart way?</span></h2>
+      <a href="https://t.me/ZappAgent_bot" class="cta-btn" style="box-shadow: 0 0 40px rgba(108, 60, 225, 0.4);" target="_blank" rel="noopener noreferrer">
+        Get Started on Telegram
+      </a>
+    </div>
+  </section>
+
+  <footer>
+    <div class="container">
+      <p class="footer-content">Powered by Celo & Self Protocol &copy; <script>document.write(new Date().getFullYear())</script> Zapp App.</p>
+    </div>
+  </footer>
+
+  <script>
+    // Smooth scroll animations
+    const observerOptions = {
+      root: null,
+      rootMargin: '0px',
+      threshold: 0.1
+    };
+
+    const observer = new IntersectionObserver((entries, observer) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, observerOptions);
+
+    document.querySelectorAll('.fade-up').forEach(element => {
+      observer.observe(element);
+    });
+  </script>
+</body>
+</html>

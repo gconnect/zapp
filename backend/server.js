@@ -6,6 +6,11 @@
 import 'dotenv/config';
 import express from 'express';
 import { EventEmitter } from 'events';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 import { initDB } from './db/index.js';
 import verifyRoutes  from './routes/verify.js';
 import receiptRoutes from './routes/receipt.js';
@@ -20,6 +25,7 @@ app.locals.events = new EventEmitter();
 
 // ─── Middleware ───────────────────────────────────────────────────────────────
 app.use(express.json());
+app.use(express.static(path.join(__dirname, '../frontend')));
 app.use(express.urlencoded({ extended: true }));
 
 // Request logger
