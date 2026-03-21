@@ -85,9 +85,10 @@ export async function exportSelfAgentKey(sessionToken) {
 
 export function saveSessionToken(sessionToken, telegramId) {
   getDB().prepare(`
-    INSERT OR REPLACE INTO session_tokens (session_token, telegram_id)
-    VALUES (?, ?)
-  `).run(sessionToken, String(telegramId));
+    UPDATE session_tokens
+    SET telegram_id = ?
+    WHERE session_token = ?
+  `).run(String(telegramId), sessionToken);
 }
 
 export function getTelegramIdBySessionToken(sessionToken) {
