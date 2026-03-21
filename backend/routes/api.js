@@ -370,8 +370,8 @@ router.post('/send', async (req, res) => {
 router.post('/split/equal', async (req, res) => {
   try {
     const { fromTelegramId, recipientIdentifiers, totalAmount, token = 'USDC', memo = '' } = req.body;
-    if (!fromTelegramId || !recipientIdentifiers?.length || !totalAmountCusd) {
-      return res.status(400).json({ error: 'fromTelegramId, recipientIdentifiers[], totalAmountCusd required' });
+    if (!fromTelegramId || !recipientIdentifiers?.length || !totalAmount) {
+      return res.status(400).json({ error: 'fromTelegramId, recipientIdentifiers[], totalAmount required' });
     }
 
     const sender = getUserByTelegramId(String(fromTelegramId));

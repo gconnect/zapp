@@ -171,15 +171,15 @@ export async function runFaucet(toAddress, amountCusd = 10) {
 
 // ─── SplitPayment Contract ───────────────────────────────────────────────────
 
-export async function splitEqualOnChain({ fromPrivateKey, recipients, totalAmountCusd, memo = '' }) {
+export async function splitEqualOnChain({ fromPrivateKey, recipients, totalAmount, memo = '' }) {
   const splitAddress = process.env.SPLIT_PAYMENT_ADDRESS;
   const cusdAddress = process.env.USDC_ADDRESS || '0xAd9a854784BD9e8e5E975e39cdFD34cA32dd7fEf';
   const abi = loadABI('SplitPayment');
   const { client, account } = getWalletClient(fromPrivateKey);
-  const totalWei = parseUnits(String(totalAmountCusd), 18);
+  const totalWei = parseUnits(String(totalAmount), 18);
 
   // Approve the split contract to spend USDC
-  await approveCUSD({ fromPrivateKey, spenderAddress: splitAddress, amountCusd: totalAmountCusd });
+  await approveCUSD({ fromPrivateKey, spenderAddress: splitAddress, amountCusd: totalAmount });
 
   const hash = await client.writeContract({
     account,

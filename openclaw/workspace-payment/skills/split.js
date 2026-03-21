@@ -5,21 +5,21 @@
 
 const BACKEND = process.env.CELOPAY_BACKEND || 'http://localhost:3000';
 
-export async function splitEqual({ fromTelegramId, recipientIdentifiers, totalAmountCusd, memo = '' }) {
+export async function splitEqual({ fromTelegramId, recipientIdentifiers, totalAmount, token = 'USDC', memo = '' }) {
   const res = await fetch(`${BACKEND}/api/split/equal`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ fromTelegramId, recipientIdentifiers, totalAmountCusd, memo })
+    body: JSON.stringify({ fromTelegramId, recipientIdentifiers, totalAmount, token, memo })
   });
 
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || 'Split failed');
 
-  const perPerson = (totalAmountCusd / recipientIdentifiers.length).toFixed(2);
+  const perPerson = (totalAmount / recipientIdentifiers.length).toFixed(2);
   return {
     txHash: data.txHash,
     explorerUrl: data.explorerUrl,
-    display: `✅ Split *${totalAmountCusd} USDC* — *${perPerson} USDC* each to ${recipientIdentifiers.length} people\n[View on Celoscan](${data.explorerUrl})`
+    display: `✅ Split *${totalAmount} ${token}* — *${perPerson} ${token}* each to ${recipientIdentifiers.length} people`
   };
 }
 
