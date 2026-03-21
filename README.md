@@ -158,10 +158,9 @@ PRIVATE_KEY=your-celo-wallet-private-key
 
 | Contract | Address (Celo Sepolia) |
 |---|---|
-| SplitPayment | `0x...` |
-| EsusuCircle | `0x...` |
+| SplitPayment | `0xa08C0955FE916aF5837dE7f7d9F5306C3892543a` |
+| EsusuCircle | `0xaA88693dA1437450E62844697FB4fEBFd0a73F27` |
 | USDC (mock) | `0x7eE404CC53c1cdAd82dB9627d18e96fe16C3C823` |
-
 ---
 
 ## Network
@@ -183,11 +182,11 @@ PRIVATE_KEY=your-celo-wallet-private-key
 - [x] PNG and PDF receipts
 - [x] Testnet faucet
 - [x] ERC-8004 agent registration
+- [x] Custom split amounts
 - [ ] Mainnet launch + security audit
 - [ ] Multi-token: cKES, cNGN, cGHS, cUSD, USDT
 - [ ] On-ramp: Naira, Cedis, Shillings, M-Pesa, MTN MoMo
 - [ ] Off-ramp: local bank + mobile money cashout
-- [ ] Custom split amounts
 - [ ] Multi-chain expansion
 - [ ] B2B API and developer SDK
 - [ ] Multi-language support (Swahili, Hausa, Yoruba, French)
