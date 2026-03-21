@@ -218,3 +218,21 @@ export function updateFaucetRequest(telegramId) {
     ON CONFLICT(telegram_id) DO UPDATE SET last_request = CURRENT_TIMESTAMP
   `).run(telegramId);
 }
+
+// ─── Verification Link Operations ────────────────────────────────────────────
+
+export function saveVerificationLink(shortId, sessionToken) {
+  return getDB().prepare(`
+    INSERT OR REPLACE INTO verification_links (short_id, session_token)
+    VALUES (?, ?)
+  `).run(shortId, sessionToken);
+}
+
+export function getVerificationLink(shortId) {
+  const row = getDB().prepare('SELECT session_token FROM verification_links WHERE short_id = ?').get(shortId);
+  return row ? row.session_token : null;
+}
+
+export function deleteVerificationLink(shortId) {
+  return getDB().prepare('DELETE FROM verification_links WHERE short_id = ?').run(shortId);
+}

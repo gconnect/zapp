@@ -130,3 +130,19 @@ CREATE TABLE IF NOT EXISTS faucet_requests (
   telegram_id TEXT PRIMARY KEY,
   last_request DATETIME DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Verification short links
+CREATE TABLE IF NOT EXISTS verification_links (
+  short_id TEXT PRIMARY KEY,
+  session_token TEXT NOT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Session tokens for Self verification
+CREATE TABLE IF NOT EXISTS session_tokens (
+  session_token TEXT PRIMARY KEY,
+  telegram_id TEXT,
+  deep_link TEXT,
+  qr_data_url TEXT,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);

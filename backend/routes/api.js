@@ -4,9 +4,9 @@
  */
 
 import { Router } from 'express';
+import { saveVerificationLink, getVerificationLink, deleteVerificationLink } from '../db/index.js';
 import crypto from 'crypto';
 
-const simpleLinkMap = new Map();
 import { getCUSDBalance, sendCUSD, splitEqualOnChain, generateWallet, waitForTransaction, getExplorerUrl, getCELOBalance, sendCELO, runFaucet } from '../services/celo.js';
 import { generateReceiptPNG, generateReceiptPDF } from '../services/receipt.js';
 import { createCircle, joinCircle, contribute, getCircleStatus, getUserCircles } from '../services/esusu.js';
@@ -89,7 +89,7 @@ router.post('/onboard', async (req, res) => {
       const baseUrl = (process.env.BACKEND_URL || 'http://localhost:5500').replace(/\/$/,  '');
       
       const shortId = crypto.randomBytes(6).toString('hex');
-      simpleLinkMap.set(shortId, sessionToken);
+      saveVerificationLink(shortId, sessionToken);
 
       verificationLink = `${baseUrl}/api/self/verify/${shortId}`;
       qrCode = `${baseUrl}/api/self/qr/${shortId}`;
@@ -868,7 +868,7 @@ router.get('/self/status/:telegramId', async (req, res) => {
 
 router.get('/self/verify/:id', (req, res) => {
   const { id } = req.params;
-  const sessionToken = simpleLinkMap.get(id) || id;
+  const sessionToken = getVerificationLink(id) || id;
   const deepLink = getLinkBySessionToken(sessionToken);
 
   if (!deepLink) {
@@ -880,7 +880,7 @@ router.get('/self/verify/:id', (req, res) => {
 
 router.get('/self/qr/:id', (req, res) => {
   const { id } = req.params;
-  const sessionToken = simpleLinkMap.get(id) || id;
+  const sessionToken = getVerificationLink(id) || id;
   const qrDataURL = getQrDataURLBySessionToken(sessionToken);
 
   if (!qrDataURL) {

@@ -1,6 +1,7 @@
 import crypto from 'crypto';
 import fetch from 'node-fetch';
 import QRCode from 'qrcode';
+import { getDB } from '../db/index.js';
 
 // const SELF_APP_ID = process.env.SELF_APP_ID || 'zapp-app';
 // const SELF_APP_SECRET = process.env.SELF_APP_SECRET || '';
@@ -9,8 +10,7 @@ import QRCode from 'qrcode';
 
 const SELF_NETWORK = 'testnet'; // or 'mainnet'
 
-const sessionMap = new Map();
-const linkMap = new Map();
+// Session and link data persisted to DB — no in-memory Maps needed
 
 // ─── Step 1: Initiate Self Agent Registration ───────────────────────────────
 export async function initiateSelfVerification(walletAddress) {
@@ -35,7 +35,11 @@ export async function initiateSelfVerification(walletAddress) {
   const qrDataURL = await QRCode.toDataURL(deepLink, { width: 400, margin: 1 });
 
   // Also save the qrDataURL
-  linkMap.set(`qr_${sessionToken}`, qrDataURL);
+  // Persist session token, deep link and QR to DB
+  getDB().prepare(`
+    INSERT OR REPLACE INTO session_tokens (session_token, telegram_id, deep_link, qr_data_url)
+    VALUES (?, NULL, ?, ?)
+  `).run(sessionToken, deepLink, qrDataURL);
 
   const baseUrl = process.env.BACKEND_URL || 'https://zapp.africinnovate.com/';
 
@@ -80,27 +84,30 @@ export async function exportSelfAgentKey(sessionToken) {
 
 
 export function saveSessionToken(sessionToken, telegramId) {
-  sessionMap.set(sessionToken, telegramId);
+  getDB().prepare(`
+    INSERT OR REPLACE INTO session_tokens (session_token, telegram_id)
+    VALUES (?, ?)
+  `).run(sessionToken, String(telegramId));
 }
 
 export function getTelegramIdBySessionToken(sessionToken) {
-  return sessionMap.get(sessionToken);
+  const row = getDB().prepare('SELECT telegram_id FROM session_tokens WHERE session_token = ?').get(sessionToken);
+  return row ? row.telegram_id : null;
 }
 
 export function getLinkBySessionToken(sessionToken) {
-  return linkMap.get(sessionToken);
+  const row = getDB().prepare('SELECT deep_link FROM session_tokens WHERE session_token = ?').get(sessionToken);
+  return row ? row.deep_link : null;
 }
 
 export function getQrDataURLBySessionToken(sessionToken) {
-  return linkMap.get(`qr_${sessionToken}`);
+  const row = getDB().prepare('SELECT qr_data_url FROM session_tokens WHERE session_token = ?').get(sessionToken);
+  return row ? row.qr_data_url : null;
 }
 
 export function getSessionTokenByTelegramId(telegramId) {
-  let latestToken = null;
-  for (const [token, tid] of sessionMap.entries()) {
-    if (String(tid) === String(telegramId)) {
-      latestToken = token;
-    }
-  }
-  return latestToken;
+  const row = getDB().prepare(
+    'SELECT session_token FROM session_tokens WHERE telegram_id = ? ORDER BY created_at DESC LIMIT 1'
+  ).get(String(telegramId));
+  return row ? row.session_token : null;
 }
