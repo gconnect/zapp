@@ -1,85 +1,227 @@
-# CeloPay
+# Zapp — Conversational Payments on Celo
 
-Conversational Celo payment app on Telegram. Users send USDC, split bills, and manage esusu savings circles by chatting with a bot — no app install required.
+> Send money as easy as sending a message.
 
-## Stack
-- **Agent**: OpenClaw (3 agents: personal/Discord, payment/Telegram, admin/Telegram)
-- **Blockchain**: Celo Alfajores testnet (USDC)
-- **Identity**: Self Protocol (ZK verification)
-- **Payments**: x402 protocol for API gating
-- **Registry**: ERC-8004 agent identity
-- **Backend**: Node.js + Express + SQLite
+Zapp is a Telegram payment bot built on the Celo blockchain.
+Send CELO and USDC, split bills, manage esusu savings circles,
+and soon — top up and cash out in your local African currency,
+all by simply chatting. No app install, no seed phrases, no
+technical knowledge required.
+
+[![Live Bot](https://img.shields.io/badge/Telegram-@ZappAgent__bot-blue?logo=telegram)](https://t.me/ZappAgent_bot)
+[![Website](https://img.shields.io/badge/Website-zapp.africinnovate.com-green)](https://zapp.africinnovate.com)
+[![Network](https://img.shields.io/badge/Network-Celo%20Sepolia-yellow)](https://celo-sepolia.blockscout.com)
+[![Agent](https://img.shields.io/badge/ERC--8004-AgentScan-purple)](https://agentscan.info/agents/74c68262-a2ec-425c-9eb1-d214b450b5b1)
+
+---
+
+## Features
+
+### Available Now
+- **Send payments** — Send CELO or USDC to any Telegram 
+  user or wallet address
+- **Split bills** — Split expenses equally or with custom amounts
+- **Esusu circles** — Create and manage group savings circles 
+  on-chain
+- **Auto wallet creation** — New users get a Celo wallet 
+  instantly on /start
+- **Identity verification** — Fraud-proof KYC via Self Protocol 
+  passport verification
+- **Receipts** — PNG and PDF receipts after every transaction
+- **Faucet** — Built-in USDC testnet faucet for new users
+
+### Coming Soon
+- **Multi-token support** — cKES, cNGN, cGHS, cUSD, USDT and more
+- **On-ramp** — Fund your wallet with Naira, Cedis, Shillings, 
+  or mobile money (M-Pesa, MTN MoMo) directly in Telegram
+- **Off-ramp** — Cash out to local bank account or mobile money 
+  wallet from the chat
+- **Multi-chain** — Expand beyond Celo to other EVM chains
+- **B2B API** — Let other apps embed Zapp's payment rails
+
+---
+
+## How It Works
+
+### Sending Money
+1. User sends `/start` to [@ZappAgent_bot](https://t.me/ZappAgent_bot)
+2. Zapp creates a Celo wallet automatically
+3. User completes Self Protocol identity verification once
+4. User sends money by chatting naturally
+```
+"send 1 CELO to @john"
+"split 20 USDC with @mary and @james"
+"what's my balance"
+"create a savings circle called Lagos Squad"
+```
+
+### On-Ramp / Off-Ramp (Roadmap)
+```
+"top up 5000 Naira"          → receive USDC in wallet
+"cash out 10 USDC to M-Pesa" → receive local currency
+"send 500 Cedis to @kofi"    → auto-converts and sends
+```
+
+---
+
+## Vision
+
+Zapp's mission is to make decentralized payments as natural
+as texting, starting with Africa. The roadmap goes beyond
+crypto-to-crypto — we're building the rails for anyone to
+move seamlessly between local currencies and on-chain assets,
+without ever leaving Telegram.
+
+Target currencies: NGN, GHS, KES, TZS, UGX, ZAR, XOF, XAF
+Target integrations: Yellow Card, Kotani Pay, Transak, M-Pesa
+
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|---|---|
+| Bot framework | OpenClaw agent framework |
+| Blockchain | Celo (CELO + USDC, expanding) |
+| Identity | Self Protocol |
+| Backend | Node.js + Express |
+| Database | better-sqlite3 |
+| Smart contracts | Solidity (EsusuCircle, SplitPayment) |
+| Agent registry | ERC-8004 |
+| On/Off-ramp (roadmap) | Yellow Card / Kotani Pay / Transak |
+
+---
 
 ## Project Structure
 ```
-celopay/
-├── contracts/       # Hardhat — EsusuCircle, SplitPayment, CeloPayRegistry
-├── backend/         # Express server — webhooks, receipts, blockchain services
-└── openclaw/        # Agent workspaces — SOUL.md, skills, gateway config
+zapp/
+├── backend/
+│   ├── routes/         # API endpoints
+│   ├── services/       # Celo, Self Protocol, receipts
+│   ├── db/             # SQLite schema and queries
+│   └── server.js       # Express server
+├── contracts/
+│   ├── contracts/      # Solidity smart contracts
+│   ├── scripts/        # Deployment scripts
+│   └── test/           # Contract tests
+└── openclaw/
+    └── workspace-zapp-payment/
+        ├── SOUL.md     # Agent personality and rules
+        ├── TOOLS.md    # Backend API reference
+        └── skills/     # Agent skill functions
 ```
 
-## Quick Start
+---
 
-### 1. Contracts (deploy to Alfajores)
+## Getting Started
+
+### Prerequisites
+- Node.js v20+
+- Telegram bot token from [@BotFather](https://t.me/BotFather)
+- OpenClaw CLI installed
+- Celo Sepolia RPC access
+
+### Installation
 ```bash
-cd contracts
-npm install
-cp .env.example .env   # add DEPLOYER_PRIVATE_KEY
-npx hardhat test       # run contract tests
-npx hardhat run scripts/deploy.js --network alfajores
+# Clone the repo
+git clone https://github.com/yourusername/zapp.git
+cd zapp
+
+# Install backend dependencies
+cd backend && npm install
+
+# Copy environment variables
+cp .env.example .env
+# Fill in your values
+
+# Initialize the database
+node -e "import('./db/index.js').then(m => m.initDB())"
+
+# Start the backend
+pm2 start server.js --name zapp-backend
+
+# Start the OpenClaw gateway
+openclaw gateway --force
 ```
 
-### 2. Backend
-```bash
-cd backend
-npm install
-cp .env.example .env   # fill in all values
-node server.js
+### Environment Variables
+```env
+BACKEND_URL=https://your-domain.com
+DB_PATH=./db/zapp.sqlite
+SELF_WEBHOOK_SECRET=your-webhook-secret
+PRIVATE_KEY=your-celo-wallet-private-key
 ```
 
-### 3. OpenClaw
-```bash
-# Copy workspace directories to ~/.openclaw/
-cp -r openclaw/workspace-payment ~/.openclaw/
-cp -r openclaw/workspace-admin ~/.openclaw/
-cp openclaw/gateway/openclaw.json ~/.openclaw/
+---
 
-# Edit openclaw.json — add your real bot tokens and Telegram user ID
-openclaw gateway restart
-```
+## Smart Contracts
 
-### 4. Telegram Setup
-- Create @YourPayBot via @BotFather → set token in openclaw.json
-- Create @YourAdminBot via @BotFather → set token + your Telegram ID in allowlist
-- For group esusu circles: add @YourPayBot to group, disable privacy mode in BotFather
+| Contract | Address (Celo Sepolia) |
+|---|---|
+| SplitPayment | `0x...` |
+| EsusuCircle | `0x...` |
+| USDC (mock) | `0x7eE404CC53c1cdAd82dB9627d18e96fe16C3C823` |
 
-## User Commands (natural language)
-| Say | Action |
-|-----|--------|
-| "what's my balance" | Check USDC balance |
-| "send peter 5 cusd" | Send to @peter |
-| "split 100 btw james and john" | Equal split |
-| "my circles" | View esusu status |
-| "join circle #3" | Join savings circle |
-| "create circle" | Start new esusu |
-| "pay esusu" | Contribute current round |
+---
 
-## Admin Commands (admin bot only)
-- "show transactions today"
-- "show failed transactions"
-- "user info @username"
-- "flag user @username"
-- "list all circles"
-- "who hasn't paid in [circle name]"
-- "stats"
+## Network
 
-## Faucet (Alfajores testnet)
-Get test CELO: https://faucet.celo.org/alfajores
+- **Network:** Celo Sepolia Testnet
+- **Chain ID:** 11142220
+- **Explorer:** https://celo-sepolia.blockscout.com
+- **Faucet:** https://faucet.celo.org/celo-sepolia
 
-## Moving to Antigravity
-When ready, `git push` each workspace separately:
-```bash
-cd backend && git init && git remote add origin <backend-repo-url> && git push
-cd contracts && git init && git remote add origin <contracts-repo-url> && git push
-# Each openclaw workspace also gets its own repo
-```
+---
+
+## Roadmap
+
+- [x] Wallet creation on onboarding
+- [x] Self Protocol identity verification
+- [x] CELO and USDC transfers
+- [x] Equal bill splitting
+- [x] Esusu savings circles
+- [x] PNG and PDF receipts
+- [x] Testnet faucet
+- [x] ERC-8004 agent registration
+- [ ] Mainnet launch + security audit
+- [ ] Multi-token: cKES, cNGN, cGHS, cUSD, USDT
+- [ ] On-ramp: Naira, Cedis, Shillings, M-Pesa, MTN MoMo
+- [ ] Off-ramp: local bank + mobile money cashout
+- [ ] Custom split amounts
+- [ ] Multi-chain expansion
+- [ ] B2B API and developer SDK
+- [ ] Multi-language support (Swahili, Hausa, Yoruba, French)
+
+---
+
+## Contributing
+
+PRs welcome. Please open an issue first to discuss what
+you'd like to change.
+
+---
+
+## Built With
+
+- [Celo](https://celo.org) — Mobile-first blockchain
+- [Self Protocol](https://self.xyz) — Decentralized identity
+- [OpenClaw](https://openclaw.ai) — AI agent framework
+- [Telegram Bot API](https://core.telegram.org/bots/api)
+
+---
+
+## License
+
+MIT
+
+---
+
+<p align="center">
+  Built with love for Africa 🌍
+  <br/>
+  <a href="https://t.me/ZappAgent_bot">Try Zapp on Telegram</a>
+  ·
+  <a href="https://zapp.africinnovate.com">Website</a>
+  ·
+  <a href="https://agentscan.info/agents/74c68262-a2ec-425c-9eb1-d214b450b5b1">Agent Registry</a>
+</p>
