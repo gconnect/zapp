@@ -211,7 +211,7 @@ you'd like to change.
 
 ## License
 
-MIT
+[MIT](https://github.com/gconnect/zapp/blob/main/LICENSE)
 
 ---
 
