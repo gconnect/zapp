@@ -64,6 +64,7 @@ const router = Router();
 router.post('/onboard', async (req, res) => {
   try {
     const { telegramId, telegramUsername, telegramName } = req.body;
+    console.log('Onboard called with:', { telegramId, telegramUsername, telegramName });
     if (!telegramId) return res.status(400).json({ error: 'telegramId required' });
 
     // Upsert user

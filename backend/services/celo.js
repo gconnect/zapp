@@ -119,6 +119,7 @@ export async function sendCELO({ fromPrivateKey, toAddress, amountCelo }) {
 }
 
 export async function sendCUSD({ fromPrivateKey, toAddress, amountCusd, memo = '' }) {
+  console.log('sendCUSD called with:', { toAddress, amountCusd, hasPrivateKey: !!fromPrivateKey });
   const cusdAddress = process.env.USDC_ADDRESS || '0xAd9a854784BD9e8e5E975e39cdFD34cA32dd7fEf';
   const { client, account } = getWalletClient(fromPrivateKey);
   const amountWei = parseUnits(String(amountCusd), 18);
