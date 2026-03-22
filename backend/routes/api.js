@@ -192,6 +192,11 @@ router.post('/faucet', async (req, res) => {
     if (!user) return res.status(404).json({ error: 'User not found. Use /start to register.' });
     if (!user.wallet_address) return res.status(400).json({ error: 'No wallet found. Use /start to set up.' });
 
+    // Require identity verification before faucet
+    if (!user.self_verified) {
+      return res.status(403).json({ error: 'Identity verification required before requesting funds. Please complete Self Protocol verification first.' });
+    }
+
     // Enforce Rate Limit
     if (!checkFaucetRateLimit(String(telegramId))) {
       return res.status(429).json({ error: 'Rate limit exceeded. You can only request testnet USDC once every 24 hours.' });
@@ -676,6 +681,44 @@ router.get('/admin/circles', adminAuth, async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/admin/verify/{telegramId}:
+ *   post:
+ *     summary: Manually verify a user
+ *     description: Marks a user as Self-verified in the database. Use this to unblock users whose verification session expired before the backend could capture their completed Self Protocol attestation.
+ *     parameters:
+ *       - in: path
+ *         name: telegramId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: User verified successfully
+ *       404:
+ *         description: User not found
+ *       500:
+ *         description: Internal server error
+ */
+router.post('/admin/verify/:telegramId', adminAuth, (req, res) => {
+  try {
+    const { telegramId } = req.params;
+    const user = getUserByTelegramId(telegramId);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    if (user.self_verified) {
+      return res.json({ message: 'User is already verified', telegramId });
+    }
+
+    setUserVerified(telegramId, 'admin-manual-verify');
+    res.json({ success: true, message: `User ${telegramId} marked as verified`, telegramId });
+  } catch (err) {
+    console.error('Admin verify error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ─── CELO Native Balance ──────────────────────────────────────────────────────
 
 /**
@@ -843,26 +886,96 @@ router.get('/self/status/:telegramId', async (req, res) => {
   const { telegramId } = req.params;
 
   try {
+    // First check if user is already verified in the database
+    const user = getUserByTelegramId(telegramId);
+    if (!user) {
+      return res.status(404).json({ verified: false, message: 'User not found. Use /start to register.' });
+    }
+
+    // If already verified in DB, return immediately — no need to poll Self API
+    if (user.self_verified) {
+      return res.json({ verified: true, stage: 'completed', message: 'User is verified.' });
+    }
+
     // Look up the latest sessionToken for this Telegram ID
-    const sessionToken = getSessionTokenByTelegramId(telegramId); // implement reverse lookup
+    let sessionToken = getSessionTokenByTelegramId(telegramId);
 
     if (!sessionToken) {
-      return res.json({ verified: false, message: 'No Self session found for this user.' });
+      // No session exists at all — auto-create a new one if user has a wallet
+      if (user.wallet_address) {
+        try {
+          const newSession = await initiateSelfVerification(user.wallet_address);
+          saveSessionToken(newSession.sessionToken, telegramId);
+          const verificationLink = newSession.verificationLink;
+          return res.json({
+            verified: false,
+            stage: 'pending',
+            message: 'A new verification session has been created.',
+            verificationLink
+          });
+        } catch (regErr) {
+          console.error('Failed to auto-create verification session:', regErr);
+          return res.json({
+            verified: false,
+            message: 'Unable to create verification session. Please type /start in the bot.'
+          });
+        }
+      }
+      return res.json({
+        verified: false,
+        message: 'No wallet found. Please type /start in the bot to register.'
+      });
     }
 
-    const status = await pollSelfVerificationStatus(sessionToken);
+    // Poll Self Protocol for the current verification status
+    try {
+      const status = await pollSelfVerificationStatus(sessionToken);
 
-    if (status.stage === 'completed') {
-      const user = getUserByTelegramId(telegramId);
-      if (!user.self_verified) setUserVerified(telegramId, status.agentId);
-      return res.json({ verified: true, stage: status.stage, agentId: status.agentId, humanAddress: status.humanAddress });
+      if (status.stage === 'completed') {
+        // Mark user as verified in the database — this is permanent
+        setUserVerified(telegramId, status.agentId);
+        return res.json({ verified: true, stage: status.stage, agentId: status.agentId, humanAddress: status.humanAddress });
+      }
+
+      const verificationLink = getLinkBySessionToken(sessionToken);
+      return res.json({ verified: false, stage: status.stage, verificationLink });
+    } catch (pollErr) {
+      // Session token expired on Self Protocol's side
+      // Auto-create a new verification session so the user doesn't need to /start
+      console.warn(`Self session expired for user ${telegramId}, creating new session...`);
+
+      if (user.wallet_address) {
+        try {
+          const newSession = await initiateSelfVerification(user.wallet_address);
+          saveSessionToken(newSession.sessionToken, telegramId);
+          const verificationLink = newSession.verificationLink;
+          return res.json({
+            verified: false,
+            stage: 'pending',
+            message: 'Your previous verification session expired. A new one has been created automatically.',
+            verificationLink
+          });
+        } catch (regErr) {
+          console.error('Failed to auto-renew verification session:', regErr);
+        }
+      }
+
+      return res.json({
+        verified: false,
+        message: 'Verification session expired. Please type /start in the bot to get a new verification link.'
+      });
     }
-
-    const verificationLink = getLinkBySessionToken(sessionToken);
-    res.json({ verified: false, stage: status.stage, verificationLink });
   } catch (err) {
-    console.error('Error polling Self status:', err);
-    res.status(500).json({ error: 'Failed to check verification status' });
+    console.error('Error in Self status check:', err);
+    // Last-resort fallback: check DB state
+    const user = getUserByTelegramId(req.params.telegramId);
+    if (user?.self_verified) {
+      return res.json({ verified: true, stage: 'completed', message: 'User is verified (cached).' });
+    }
+    res.json({
+      verified: false,
+      message: 'An error occurred checking verification status. Please try again.'
+    });
   }
 });
 
@@ -898,7 +1011,7 @@ router.get('/self/qr/:id', (req, res) => {
   res.end(img);
 });
 
-router.get('/self/status/:sessionToken', async (req, res) => {
+router.get('/self/status/session/:sessionToken', async (req, res) => {
   const { sessionToken } = req.params;
 
   try {
@@ -928,7 +1041,6 @@ router.get('/self/status/:sessionToken', async (req, res) => {
       });
     }
 
-    // ⬇️ still inside try block
     return res.json({
       verified: false,
       stage: status.stage,
