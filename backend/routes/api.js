@@ -141,6 +141,7 @@ router.post('/onboard', async (req, res) => {
  *         description: Internal server error
  */
 router.get('/balance/:telegramId', async (req, res) => {
+  console.log('Balance request for telegramId:', req.params.telegramId, 'raw url:', req.url);
   try {
     const user = getUserByTelegramId(req.params.telegramId);
     if (!user) return res.status(404).json({ error: 'User not found. Use /start to register.' });
@@ -395,8 +396,14 @@ router.post('/split/equal', async (req, res) => {
     // Resolve all recipients
     const wallets = [];
     for (const id of recipientIdentifiers) {
-      const user = id.startsWith('0x') ? { wallet_address: id } : getUserByUsername(id);
-      if (!user?.wallet_address) return res.status(404).json({ error: `Recipient "${id}" not found or has no wallet` });
+      const resolvedId = (!id || id === 'me' || id === 'myself' || id.toLowerCase() === 'me')
+        ? (sender.telegram_username || sender.wallet_address)
+        : id;
+      if (!resolvedId) {
+        return res.status(400).json({ error: 'Could not resolve recipient — please use @username' });
+      }
+      const user = resolvedId.startsWith('0x') ? { wallet_address: resolvedId } : getUserByUsername(resolvedId);
+      if (!user?.wallet_address) return res.status(404).json({ error: `Recipient "${resolvedId}" not found or has no wallet` });
       wallets.push(user.wallet_address);
     }
 
@@ -432,6 +439,7 @@ router.post('/split/equal', async (req, res) => {
           const r = await sendCUSD({ fromPrivateKey: sender.wallet_private_key, toAddress: w, amountCusd: perPerson, memo });
           hashes.push(r.txHash);
         }
+        // sendCUSD already handles gas sponsorship internally
         txHash = hashes[0];
         explorerUrl = getExplorerUrl(txHash);
       } else if (token === 'CELO') {
@@ -524,14 +532,33 @@ router.post('/split/custom', async (req, res) => {
     const wallets = [];
     for (const r of recipients) {
       let walletAddress;
-      if (r.identifier.startsWith('0x')) {
-        walletAddress = r.identifier;
+      // Resolve "me" or empty identifier to sender
+      const identifier = (!r.identifier || 
+        r.identifier === 'me' || 
+        r.identifier === 'myself' || 
+        r.identifier?.toLowerCase() === 'me' ||
+        r.identifier === sender.telegram_id ||
+        r.identifier === String(fromTelegramId))
+        ? (sender.telegram_username || sender.wallet_address)
+        : r.identifier;
+      if (!identifier) {
+        return res.status(400).json({ error: 'Could not resolve recipient — please use @username' });
+      }
+      if (identifier.startsWith('0x')) {
+        walletAddress = identifier;
       } else {
-        const user = getUserByUsername(r.identifier);
+        const user = getUserByUsername(identifier);
         if (!user?.wallet_address) {
-          return res.status(404).json({ error: `Recipient "${r.identifier}" not found or has no wallet` });
+          // Last resort — if identifier looks like it could be the sender, use sender wallet
+          if (sender.telegram_username && 
+              (identifier.replace('@','').toLowerCase() === sender.telegram_username.toLowerCase())) {
+            walletAddress = sender.wallet_address;
+          } else {
+            return res.status(404).json({ error: `Recipient "${identifier}" not found or has no wallet` });
+          }
+        } else {
+          walletAddress = user.wallet_address;
         }
-        walletAddress = user.wallet_address;
       }
       wallets.push({ wallet: walletAddress, amount: r.amount });
     }
@@ -554,21 +581,27 @@ router.post('/split/custom', async (req, res) => {
     const explorerUrl = getExplorerUrl(txHash);
 
     // Record transactions in DB
-    for (const w of wallets) {
-      createTransaction({
-        txHash, txType: 'split_custom',
-        fromUserId: sender.id, toUserId: null,
-        fromAddress: sender.wallet_address, toAddress: w.wallet,
-        amountCusd: token === 'USDC' ? parseFloat(w.amount) : 0,
-        amountCelo: token === 'CELO' ? parseFloat(w.amount) : 0,
-        memo
-      });
+    for (let i = 0; i < wallets.length; i++) {
+      const w = wallets[i];
+      const hash = hashes[i] || hashes[0];
+      try {
+        createTransaction({
+          txHash: hash, txType: 'split_custom',
+          fromUserId: sender.id, toUserId: null,
+          fromAddress: sender.wallet_address, toAddress: w.wallet,
+          amountCusd: token === 'USDC' ? parseFloat(w.amount) : 0,
+          amountCelo: token === 'CELO' ? parseFloat(w.amount) : 0,
+          memo
+        });
+      } catch (dbErr) {
+        console.error('DB record error (non-fatal):', dbErr.message);
+      }
     }
 
     res.json({
       txHash,
       explorerUrl,
-      total: wallets.reduce((sum, w) => sum + w.amount, 0),
+      total: wallets.reduce((sum, w) => sum + parseFloat(w.amount), 0),
       recipients: wallets.length,
       token
     });
@@ -915,7 +948,9 @@ router.get('/self/status/:telegramId', async (req, res) => {
         try {
           const newSession = await initiateSelfVerification(user.wallet_address);
           saveSessionToken(newSession.sessionToken, telegramId);
-          const verificationLink = newSession.verificationLink;
+          const shortId1 = crypto.randomBytes(6).toString('hex');
+          saveVerificationLink(shortId1, newSession.sessionToken);
+          const verificationLink = `${process.env.BACKEND_URL || 'https://zapp.africinnovate.com'}/api/self/verify/${shortId1}`;
           return res.json({
             verified: false,
             stage: 'pending',
@@ -946,7 +981,9 @@ router.get('/self/status/:telegramId', async (req, res) => {
         return res.json({ verified: true, stage: status.stage, agentId: status.agentId, humanAddress: status.humanAddress });
       }
 
+      console.log('getLinkBySessionToken called with:', sessionToken?.substring(0,20));
       const verificationLink = getLinkBySessionToken(sessionToken);
+      console.log('getLinkBySessionToken result:', verificationLink);
       return res.json({ verified: false, stage: status.stage, verificationLink });
     } catch (pollErr) {
       // Session token expired on Self Protocol's side
@@ -957,7 +994,9 @@ router.get('/self/status/:telegramId', async (req, res) => {
         try {
           const newSession = await initiateSelfVerification(user.wallet_address);
           saveSessionToken(newSession.sessionToken, telegramId);
-          const verificationLink = newSession.verificationLink;
+          const shortId2 = crypto.randomBytes(6).toString('hex');
+          saveVerificationLink(shortId2, newSession.sessionToken);
+          const verificationLink = `${process.env.BACKEND_URL || 'https://zapp.africinnovate.com'}/api/self/verify/${shortId2}`;
           return res.json({
             verified: false,
             stage: 'pending',

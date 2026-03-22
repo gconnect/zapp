@@ -77,7 +77,7 @@ export function flagUser(telegramId) {
 
 export function createTransaction({ txHash, txType, fromUserId, toUserId, fromAddress, toAddress, amountCusd, memo }) {
   return getDB().prepare(`
-    INSERT INTO transactions (tx_hash, tx_type, from_user_id, to_user_id, from_address, to_address, amount_cusd, memo)
+    INSERT OR IGNORE INTO transactions (tx_hash, tx_type, from_user_id, to_user_id, from_address, to_address, amount_cusd, memo)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
   `).run(txHash, txType, fromUserId || null, toUserId || null, fromAddress, toAddress || null, amountCusd, memo || null);
 }
@@ -231,6 +231,16 @@ export function saveVerificationLink(shortId, sessionToken) {
 export function getVerificationLink(shortId) {
   const row = getDB().prepare('SELECT session_token FROM verification_links WHERE short_id = ?').get(shortId);
   return row ? row.session_token : null;
+}
+
+export function getLinkBySessionToken(sessionToken) {
+  const db = getDB();
+  const baseUrl = process.env.BACKEND_URL || 'https://zapp.africinnovate.com';
+  const row = db.prepare(
+    'SELECT short_id FROM verification_links WHERE session_token = ? ORDER BY created_at DESC LIMIT 1'
+  ).get(sessionToken);
+  if (!row) return null;
+  return `${baseUrl}/api/self/verify/${row.short_id}`;
 }
 
 export function deleteVerificationLink(shortId) {

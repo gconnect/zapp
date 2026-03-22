@@ -127,8 +127,8 @@ async function topUpGas(userAddress) {
 
     // Rate limit: only top up once per hour per address
     const lastTopUp = gasTopUpCache.get(userAddress);
-    const oneHour = 60 * 60 * 1000;
-    if (lastTopUp && Date.now() - lastTopUp < oneHour) {
+    const fiveMinutes = 5 * 60 * 1000;
+    if (lastTopUp && Date.now() - lastTopUp < fiveMinutes) {
       console.log(`Gas top-up skipped for ${userAddress} — already topped up recently`);
       return;
     }
@@ -216,11 +216,21 @@ export async function runFaucet(toAddress, amountCusd = 10) {
 // ─── SplitPayment Contract ───────────────────────────────────────────────────
 
 export async function splitEqualOnChain({ fromPrivateKey, recipients, totalAmount, memo = '' }) {
+  const { account: checkAccount } = getWalletClient(fromPrivateKey);
+  const publicClient = getPublicClient();
+  const balance = await publicClient.getBalance({ address: checkAccount.address });
+  if (balance < parseUnits('0.005', 18)) {
+    console.log('Low CELO balance for split — topping up gas...');
+    await topUpGas(checkAccount.address);
+  }
   const splitAddress = process.env.SPLIT_PAYMENT_ADDRESS;
   const cusdAddress = process.env.USDC_ADDRESS || '0xAd9a854784BD9e8e5E975e39cdFD34cA32dd7fEf';
   const abi = loadABI('SplitPayment');
   const { client, account } = getWalletClient(fromPrivateKey);
   const totalWei = parseUnits(String(totalAmount), 18);
+
+  // Top up gas before approve + split
+  await topUpGas(account.address);
 
   // Approve the split contract to spend USDC
   await approveCUSD({ fromPrivateKey, spenderAddress: splitAddress, amountCusd: totalAmount });

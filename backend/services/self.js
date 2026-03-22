@@ -97,6 +97,13 @@ export function getTelegramIdBySessionToken(sessionToken) {
 }
 
 export function getLinkBySessionToken(sessionToken) {
+  const baseUrl = process.env.BACKEND_URL || 'https://zapp.africinnovate.com';
+  // Try short link first from verification_links
+  const shortRow = getDB().prepare(
+    'SELECT short_id FROM verification_links WHERE session_token = ? ORDER BY created_at DESC LIMIT 1'
+  ).get(sessionToken);
+  if (shortRow) return `${baseUrl}/api/self/verify/${shortRow.short_id}`;
+  // Fallback to deep_link from session_tokens
   const row = getDB().prepare('SELECT deep_link FROM session_tokens WHERE session_token = ?').get(sessionToken);
   return row ? row.deep_link : null;
 }
