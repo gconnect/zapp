@@ -26,7 +26,11 @@ const PORT = process.env.PORT || 3000;
 app.locals.events = new EventEmitter();
 
 // ─── Middleware ───────────────────────────────────────────────────────────────
-app.use(express.json());
+app.use(express.json({
+  verify: (req, res, buf) => {
+    req.rawBody = buf.toString();
+  }
+}));
 app.use(express.static(path.join(__dirname, '../frontend')));
 app.use(express.urlencoded({ extended: true }));
 
@@ -105,7 +109,7 @@ async function start() {
   app.locals.db = db;
   app.locals.getDB = () => db;
 
-  app.listen(PORT, () => {
+  app.listen(PORT, '127.0.0.1', () => {
     console.log(`\n╔══════════════════════════════════════════╗`);
     console.log(`║   Zapp Backend Server                 ║`);
     console.log(`╚══════════════════════════════════════════╝`);

@@ -858,10 +858,43 @@ router.get('/self/status/:telegramId', async (req, res) => {
       return res.json({ verified: true, stage: status.stage, agentId: status.agentId, humanAddress: status.humanAddress });
     }
 
-    const verificationLink = getLinkBySessionToken(sessionToken);
+    // Get verification link from DB
+    const db = getDB();
+    const linkRow = db.prepare(
+      'SELECT short_id FROM verification_links WHERE session_token = ? ORDER BY rowid DESC LIMIT 1'
+    ).get(sessionToken);
+
+    let verificationLink = null;
+    if (linkRow) {
+      const baseUrl = (process.env.BACKEND_URL || 'http://localhost:5500').replace(/\/$/, '');
+      verificationLink = `${baseUrl}/api/self/verify/${linkRow.short_id}`;
+    }
+
     res.json({ verified: false, stage: status.stage, verificationLink });
   } catch (err) {
     console.error('Error polling Self status:', err);
+
+    // Auto-renew expired sessions
+    if (err.message && err.message.includes('Session expired')) {
+      try {
+        const user = getUserByTelegramId(telegramId);
+        if (!user || !user.wallet_address) {
+          return res.status(404).json({ error: 'User not found. Please type /start to register.' });
+        }
+        const verificationData = await initiateSelfVerification(user.wallet_address);
+        const newSessionToken = verificationData.sessionToken;
+        const shortId = crypto.randomBytes(6).toString('hex');
+        saveVerificationLink(shortId, newSessionToken);
+        saveSessionToken(newSessionToken, telegramId);
+        const baseUrl = (process.env.BACKEND_URL || 'http://localhost:5500').replace(/\/$/, '');
+        const verificationLink = `${baseUrl}/api/self/verify/${shortId}`;
+        return res.json({ verified: false, sessionExpired: true, verificationLink });
+      } catch (renewErr) {
+        console.error('Error renewing session:', renewErr);
+        return res.status(500).json({ error: 'Failed to renew verification session. Please type /start to try again.' });
+      }
+    }
+
     res.status(500).json({ error: 'Failed to check verification status' });
   }
 });
@@ -959,3 +992,20 @@ router.get('/self/session/:sessionToken', (req, res) => {
 });
 
 export default router;
+
+
+// Auto-deploy webhook
+router.post('/deploy', (req, res) => {
+  const sig = req.headers['x-hub-signature-256'];
+  const secret = process.env.WEBHOOK_SECRET || 'zapp-webhook';
+  const rawBody = req.rawBody || JSON.stringify(req.body) || '';
+  const expected = 'sha256=' + createHmac('sha256', secret).update(rawBody).digest('hex');
+  if (!sig || sig !== expected) {
+    return res.status(403).send('Forbidden');
+  }
+  res.send('Deploying');
+  exec('/home/afric/deploy.sh', (err, stdout) => {
+    if (err) console.error('Deploy error:', err.message);
+    console.log(stdout);
+  });
+}); // webhook-deploy
