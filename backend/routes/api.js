@@ -1031,7 +1031,10 @@ router.get('/self/status/:telegramId', async (req, res) => {
 router.get('/self/verify/:id', (req, res) => {
   const { id } = req.params;
   const sessionToken = getVerificationLink(id) || id;
-  const deepLink = getLinkBySessionToken(sessionToken);
+  // Get deep link directly from session_tokens to avoid redirect loop
+  const db = getDB();
+  const row = db.prepare('SELECT deep_link FROM session_tokens WHERE session_token = ?').get(sessionToken);
+  const deepLink = row?.deep_link;
 
   if (!deepLink) {
     return res.status(404).send('Verification link expired or not found. Please type /start in the bot to generate a new one.');
