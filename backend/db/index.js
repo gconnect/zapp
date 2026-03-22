@@ -54,7 +54,7 @@ export function getUserByWallet(walletAddress) {
 
 export function getUserByUsername(username) {
   const clean = username.replace('@', '');
-  return getDB().prepare('SELECT * FROM users WHERE telegram_username = ?').get(clean);
+  return getDB().prepare('SELECT * FROM users WHERE telegram_username COLLATE NOCASE = ?').get(clean);
 }
 
 export function setUserWallet(telegramId, walletAddress, encryptedKey) {

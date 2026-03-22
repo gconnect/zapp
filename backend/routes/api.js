@@ -291,6 +291,13 @@ router.post('/send', async (req, res) => {
 
     if (!recipientWallet) return res.status(400).json({ error: 'Recipient has no wallet' });
 
+    // Enforce SOUL.md rule: NEVER send to unverified users
+    if (recipient && recipient.self_verified !== undefined && !recipient.self_verified) {
+      return res.status(403).json({ 
+        error: `Cannot send funds. Recipient "${toIdentifier}" has not completed identity verification.` 
+      });
+    }
+
     // Check sender balance
     const balance = await getCUSDBalance(sender.wallet_address);
     if (parseFloat(balance.formatted) < parseFloat(amountCusd)) {
