@@ -10,8 +10,9 @@
   <style>
     :root {
       --celo-purple: #6C3CE1;
-      --celo-green: #00E676;
-      --dark-bg: #0d0f14;
+      --celo-green: #35D07F;
+      --celo-yellow: #FCFF4B;
+      --dark-bg: #0F0E17;
       --card-bg: rgba(255, 255, 255, 0.03);
       --border-color: rgba(255, 255, 255, 0.08);
       --text-muted: #9ba0aa;
@@ -84,31 +85,262 @@
       padding: 0 24px;
     }
 
-    /* Section: Hero */
+    /* .hero refactor */
     .hero {
       min-height: 100vh;
       display: flex;
       align-items: center;
-      justify-content: center;
-      text-align: center;
       position: relative;
-      padding-top: 80px;
-      padding-bottom: 80px;
+      padding: 140px 0 100px;
       overflow: hidden;
     }
 
-    .hero-glow {
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 80px;
+      align-items: center;
+      width: 100%;
+    }
+
+    .hero h1 { 
+      font-size: clamp(2.8rem, 6.5vw, 4.8rem); 
+      margin-bottom: 20px; 
+      letter-spacing: -0.04em;
+      max-width: 700px;
+    }
+    .hero p { 
+      max-width: 580px; 
+      margin-bottom: 32px; 
+      font-size: 1.25rem; 
+      line-height: 1.5;
+      color: rgba(255,255,255,0.7);
+    }
+
+    .hero-buttons {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 40px;
+    }
+
+    .cta-outline {
+      background: transparent;
+      border: 1px solid var(--border-color);
+    }
+    .cta-outline:hover {
+      background: rgba(255,255,255,0.05);
+      border-color: rgba(255,255,255,0.2);
+    }
+
+    .hero-pills {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .pill {
+      padding: 6px 16px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--border-color);
+      border-radius: 99px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--text-muted);
+    }
+
+    .hero-text {
+      text-align: left;
+      z-index: 2;
+    }
+
+    .hero-visual {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Phone Mockup Refined - iPhone 15 Pro Style */
+    .hero-visual-wrapper {
+      position: relative;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      animation: float-main 3s ease-in-out infinite;
+      transform: rotate(6deg);
+      z-index: 10;
+    }
+
+    .phone-mockup {
+      width: 310px;
+      height: 650px;
+      background: #000;
+      border: 8px solid #1A1A1A;
+      border-radius: 48px;
+      position: relative;
+      box-shadow: 0 30px 80px rgba(0,0,0,0.6), 0 0 40px rgba(53,208,127,0.1);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      outline: 1.5px solid #2A2A2A;
+      z-index: 2;
+    }
+
+    /* Buttons */
+    .phone-btn {
+      position: absolute;
+      width: 3px;
+      background: #3A3A3A;
+      border-radius: 2px;
+      left: -13px;
+    }
+    .btn-silent { top: 80px; height: 25px; }
+    .btn-up { top: 115px; height: 50px; }
+    .btn-down { top: 175px; height: 50px; }
+    .phone-power {
+      position: absolute;
+      width: 3px;
+      height: 80px;
+      background: #3A3A3A;
+      right: -13px;
+      top: 150px;
+      border-radius: 2px;
+    }
+
+    .dynamic-island {
+      width: 95px;
+      height: 32px;
+      background: #000;
+      position: absolute;
+      top: 9px;
+      left: 50%;
+      transform: translateX(-50%);
+      border-radius: 20px;
+      z-index: 30;
+      border: 0.5px solid rgba(255,255,255,0.1);
+    }
+
+    .phone-header {
+      height: 105px;
+      background: #17212B;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    .status-bar {
+      height: 48px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 28px;
+      font-size: 13px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .phone-nav {
+      height: 52px;
+      display: flex;
+      align-items: center;
+      padding: 0 20px;
+      gap: 14px;
+      border-bottom: 0.5px solid rgba(255,255,255,0.1);
+    }
+
+    .phone-avatar {
+      width: 36px; height: 36px;
+      background: #35D07F;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 800; font-size: 16px; color: #000;
+      box-shadow: 0 0 15px rgba(53, 208, 127, 0.3);
+    }
+
+    .phone-info h4 { font-size: 15px; font-weight: 700; margin: 0; color: #fff; }
+    .phone-info p { font-size: 11px; color: #35D07F; margin: 0; font-weight: 500; }
+
+    .glow-circle {
       position: absolute;
       top: 50%; left: 50%;
       transform: translate(-50%, -50%);
-      width: 600px; height: 600px;
-      background: radial-gradient(circle, rgba(108, 60, 225, 0.15) 0%, rgba(0, 230, 118, 0.05) 50%, transparent 70%);
+      width: 500px; height: 500px;
+      background: radial-gradient(circle, rgba(53, 208, 127, 0.25) 0%, transparent 70%);
+      filter: blur(60px);
       z-index: -1;
-      filter: blur(40px);
+      pointer-events: none;
     }
 
-    .hero h1 { font-size: clamp(2.5rem, 8vw, 5.5rem); margin-bottom: 24px; letter-spacing: -0.03em; }
-    .hero p { max-width: 600px; margin: 0 auto 40px auto; font-size: 1.2rem; }
+    .phone-screen {
+      flex: 1;
+      background: #17212B;
+      padding: 15px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      position: relative;
+    }
+
+    .home-indicator {
+      position: absolute;
+      bottom: 8px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 120px;
+      height: 4px;
+      background: rgba(255,255,255,0.8);
+      border-radius: 4px;
+    }
+
+    .chat-bubble {
+      max-width: 85%;
+      padding: 10px 14px;
+      font-size: 0.9rem;
+      line-height: 1.4;
+      border-radius: 12px;
+      position: relative;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+    }
+
+    .chat-bubble.user {
+      align-self: flex-end;
+      background: #2B5278;
+      color: #fff;
+      border-bottom-right-radius: 4px;
+    }
+    .chat-bubble.user::after {
+      content: '';
+      position: absolute;
+      bottom: 0; right: -6px;
+      border: 6px solid transparent;
+      border-left-color: #2B5278;
+      border-bottom-color: #2B5278;
+    }
+
+    .chat-bubble.bot {
+      align-self: flex-start;
+      background: #1E2D24;
+      color: #fff;
+      border-bottom-left-radius: 4px;
+      border: 1px solid rgba(53, 208, 127, 0.1);
+    }
+    .chat-bubble.bot::after {
+      content: '';
+      position: absolute;
+      bottom: 0; left: -6px;
+      border: 6px solid transparent;
+      border-right-color: #1E2D24;
+      border-bottom-color: #1E2D24;
+    }
+    .bot-highlight { color: #35D07F; font-weight: 600; }
+
+    .bot-highlight { color: #35D07F; font-weight: 600; }
+
+    @keyframes float-main {
+      0%, 100% { transform: translateY(0) rotate(6deg); }
+      50% { transform: translateY(-16px) rotate(6deg); }
+    }
 
     .desktop-br { display: inline; }
 
@@ -166,7 +398,7 @@
     .step-card p { font-size: 1rem; }
 
     /* Section: Features */
-    .features { padding: 120px 0; }
+    .features { padding: 80px 0 20px; }
     .features-grid {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
@@ -184,7 +416,7 @@
       transition: all 0.3s ease;
     }
 
-    .feature-item:nth-child(2), .feature-item:nth-child(3) {
+    .feature-item:nth-child(even) {
       transform: translateY(40px);
     }
 
@@ -201,10 +433,43 @@
       font-size: 1.5rem;
       border: 1px solid rgba(108, 60, 225, 0.2);
     }
+    
+    /* Section: Demo Video */
+    .demo-video {
+      padding: 90px 0;
+      background: #0F0E17;
+      position: relative;
+    }
+    
+    .video-wrapper {
+      max-width: 900px;
+      margin: 0 auto;
+      position: relative;
+      border-radius: 24px;
+      overflow: hidden;
+      border: 2px solid rgba(0, 230, 118, 0.2);
+      box-shadow: 0 0 50px rgba(0, 230, 118, 0.1);
+      background: #000;
+      line-height: 0;
+    }
+    
+    .video-container {
+      position: relative;
+      padding-bottom: 56.25%; /* 16:9 Aspect Ratio */
+      height: 0;
+      overflow: hidden;
+    }
+    
+    .video-container iframe {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      border: none;
+    }
 
     /* Section: CTA Full Width */
     .cta-banner {
-      padding: 120px 0;
+      padding: 40px 0 80px;
       text-align: center;
       background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%"><defs><pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(255,255,255,0.03)" stroke-width="1"/></pattern></defs><rect width="100%" height="100%" fill="url(%23grid)" /></svg>');
       position: relative;
@@ -233,13 +498,38 @@
       transform: translateY(0);
     }
 
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-16px); }
+    }
+
     /* Responsive */
     @media (max-width: 900px) {
       .desktop-br { display: none; }
-      .hero h1 { font-size: clamp(2.5rem, 11vw, 3rem); padding: 0 10px; }
-      .hero p { font-size: 1rem; padding: 0 15px; }
-      .features-grid { grid-template-columns: 1fr; }
+      .hero { padding: 80px 0; }
+      .hero-grid {
+        grid-template-columns: 1fr;
+        text-align: center;
+        gap: 64px;
+      }
+      .hero-text { text-align: center; }
+      .hero-buttons { flex-direction: column; align-items: center; gap: 16px; width: 100%; max-width: 320px; margin: 0 auto 32px; }
+      .hero-buttons .cta-btn { width: 100%; justify-content: center; margin: 0; }
+      .hero h1 { font-size: clamp(2.5rem, 11vw, 3rem); padding: 0 10px; margin-left: auto; margin-right: auto; }
+      .hero p { font-size: 1rem; padding: 0 15px; margin-left: auto; margin-right: auto; }
+      .phone-hand { display: none; }
+      .hero-visual-wrapper { margin: 0 auto; transform: rotate(0); animation: float-mobile 4s ease-in-out infinite; }
+      .features { padding: 60px 0; }
+      .demo-video { padding: 60px 0; }
+      .cta-banner { padding: 60px 0; }
+      .feature-item:nth-child(even) { transform: none; }
       .feature-item:nth-child(2), .feature-item:nth-child(3) { transform: none; }
+      .features-grid { grid-template-columns: 1fr; gap: 24px; }
+    }
+
+    @keyframes float-mobile {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-20px); }
     }
   </style>
 </head>
@@ -260,21 +550,71 @@
   </nav>
 
   <section class="hero">
-    <div class="hero-glow"></div>
-    <div class="container fade-up">
-      <h1>Send money as easy <span class="desktop-br"><br></span> as <span class="gradient-text">sending a message.</span></h1>
-      <p>A conversational payments app natively built on Telegram. Powered by the <strong>OpenClaw AI Agent</strong>, <strong>Self Agent ID</strong>, <strong style="white-space: nowrap;">ERC-8004</strong>, and <strong>x402</strong> standards via the Celo blockchain for instant, near-zero fee global stablecoin transfers.</p>
-      <a href="https://t.me/ZappAgent_bot" class="cta-btn" target="_blank" rel="noopener noreferrer">
-        Start Chat on Telegram
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
-      </a>
-      
-      <div class="tokens-badge">
-        <span style="display:flex; gap: 8px;">🟢 CELO</span>
-        <span style="opacity: 0.3;">|</span>
-        <span style="display:flex; gap: 8px;">🔵 USDC</span>
-        <span style="opacity: 0.3;">|</span>
-        <span>Powered by Celo Blockchain</span>
+    <div class="container">
+      <div class="hero-grid fade-up">
+        <div class="hero-text">
+          <h1>Send money as easy as <span class="gradient-text">sending a message.</span></h1>
+          <p>Send CELO & USDC, split bills, and manage esusu savings circles — just by chatting on Telegram.</p>
+          
+          <div class="hero-buttons">
+            <a href="https://t.me/ZappAgent_bot" class="cta-btn" target="_blank" rel="noopener noreferrer">
+              Try on Telegram
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+            </a>
+            <a href="https://github.com/gconnect/zapp" class="cta-btn cta-outline" target="_blank">
+              View on GitHub
+            </a>
+          </div>
+
+          <div class="hero-pills">
+            <span class="pill">Send CELO & USDC</span>
+            <span class="pill">Split bills</span>
+            <span class="pill">Esusu circles</span>
+          </div>
+        </div>
+
+        <div class="hero-visual">
+          <div class="glow-circle"></div>
+          <div class="hero-visual-wrapper">
+            <div class="phone-mockup">
+              <div class="phone-btn btn-silent"></div>
+              <div class="phone-btn btn-up"></div>
+              <div class="phone-btn btn-down"></div>
+              <div class="phone-power"></div>
+              <div class="dynamic-island"></div>
+              <div class="phone-header">
+                <div class="status-bar">
+                  <span>9:41</span>
+                  <div style="display:flex; gap:6px; align-items:center;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="white"><path d="M2 22l20-20H2v20z" opacity=".3"/><path d="M17 7L2 22h15V7z"/></svg>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="white"><path d="M12.01 21.49L23.64 7c-.45-.34-4.93-4-11.64-4C5.28 3 .81 6.66.36 7l11.63 14.49.01.01.01-.01z" opacity=".3"/><path d="M12.01 21.49L23.64 7c-.45-.34-4.93-4-11.64-4C5.28 3 .81 6.66.36 7l11.63 14.49.01.01.01-.01z"/></svg>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="white"><path d="M15.67 4H14V2h-4v2H8.33C7.6 4 7 4.6 7 5.33v15.33C7 21.4 7.6 22 8.33 22h7.33c.74 0 1.34-.6 1.34-1.33V5.33C17 4.6 16.4 4 15.67 4z"/></svg>
+                  </div>
+                </div>
+                <div class="phone-nav">
+                  <div class="phone-avatar">Z</div>
+                  <div class="phone-info">
+                    <h4>ZappAgent</h4>
+                    <p>bot</p>
+                  </div>
+                </div>
+              </div>
+              <div class="phone-screen">
+                <div class="chat-bubble user">/start</div>
+                <div class="chat-bubble bot">Welcome to Zapp! Your wallet has been created. Verify identity to unlock payments.</div>
+                <div class="chat-bubble user">What is my balance?</div>
+                <div class="chat-bubble bot">CELO: <span class="bot-highlight">5.00</span> · USDC: <span class="bot-highlight">10.00</span></div>
+                <div class="chat-bubble user">Send 1 CELO to @glory</div>
+                <div class="chat-bubble bot">Sending 1 CELO to @glory. Reply <span class="bot-highlight">YES</span> to confirm.</div>
+                <div class="chat-bubble user">YES</div>
+                <div class="chat-bubble bot"><span style="color:#35D07F">✅</span> Sent successfully! View on explorer →</div>
+                <div class="chat-bubble user">Split 2 USDC with @mary and @john</div>
+                <div class="chat-bubble bot">Splitting 2 USDC — <span class="bot-highlight">1 USDC each</span>. Reply YES.</div>
+                <div class="home-indicator"></div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </section>
@@ -303,6 +643,26 @@
           <div class="step-icon">💸</div>
           <h3>Send & Split</h3>
           <p>Just type "Send 5 cUSD to @friend" or "Split 50 CELO with @james and @mary." Zapp handles all the blockchain complexity.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="demo-video">
+    <div class="container fade-up">
+      <div class="section-header">
+        <h2 style="font-size: clamp(2rem, 4vw, 3rem); margin-bottom: 16px;">See Zapp in <span class="gradient-text">Action</span></h2>
+        <p>Watch how easy it is to send money, split bills, and save together on Celo</p>
+      </div>
+      
+      <div class="video-wrapper">
+        <div class="video-container">
+          <iframe 
+            src="https://www.youtube.com/embed/Ep7268A_PY0" 
+            title="See Zapp in Action" 
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+            allowfullscreen>
+          </iframe>
         </div>
       </div>
     </div>
@@ -343,7 +703,6 @@
   </section>
 
   <section class="cta-banner">
-    <div class="hero-glow" style="width: 800px; height: 800px; opacity: 0.5;"></div>
     <div class="container fade-up">
       <h2 style="font-weight: 800;">Ready to send money<br>the <span class="gradient-text">smart way?</span></h2>
       <a href="https://t.me/ZappAgent_bot" class="cta-btn" style="box-shadow: 0 0 40px rgba(108, 60, 225, 0.4);" target="_blank" rel="noopener noreferrer">
