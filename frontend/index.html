@@ -517,7 +517,9 @@
       .hero-buttons { flex-direction: column; align-items: center; gap: 16px; width: 100%; max-width: 320px; margin: 0 auto 32px; }
       .hero-buttons .cta-btn { width: 100%; justify-content: center; margin: 0; }
       .hero h1 { font-size: clamp(2.5rem, 11vw, 3rem); padding: 0 10px; margin-left: auto; margin-right: auto; }
-      .hero p { font-size: 1rem; padding: 0 15px; margin-left: auto; margin-right: auto; }
+      .hero p { font-size: 1rem; padding: 0 15px; margin-left: auto; margin-right: auto; max-width: 340px; }
+      .hero-pills { flex-wrap: nowrap; justify-content: center; gap: 8px; }
+      .pill { padding: 5px 12px; font-size: 0.75rem; white-space: nowrap; }
       .phone-hand { display: none; }
       .hero-visual-wrapper { margin: 0 auto; transform: rotate(0); animation: float-mobile 4s ease-in-out infinite; }
       .features { padding: 60px 0; }
@@ -526,7 +528,14 @@
       .feature-item:nth-child(even) { transform: none; }
       .feature-item:nth-child(2), .feature-item:nth-child(3) { transform: none; }
       .features-grid { grid-template-columns: 1fr; gap: 24px; }
-      .agentscan-badge { bottom: 30px; left: 20px; right: auto; padding: 10px 20px; font-size: 0.85rem; }
+      .agentscan-badge { 
+        bottom: 24px; right: 20px; left: auto;
+        width: 48px; height: 48px; 
+        padding: 0; border-radius: 50%; 
+        justify-content: center;
+      }
+      .agentscan-badge .agentscan-text { display: none; }
+      .agentscan-badge .agentscan-icon { margin: 0; font-size: 1.3rem; }
     }
 
     @keyframes float-mobile {
@@ -782,7 +791,7 @@
 
   <a href="https://agentscan.info/agents/74c68262-a2ec-425c-9eb1-d214b450b5b1" target="_blank" class="agentscan-badge" rel="noopener noreferrer">
     <span class="agentscan-icon">⭐</span>
-    <span>Rate on AgentScan</span>
+    <span class="agentscan-text">Rate on AgentScan</span>
   </a>
 
   <script>
