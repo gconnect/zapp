@@ -6,6 +6,7 @@
 import { Router } from 'express';
 import { saveVerificationLink, getVerificationLink, deleteVerificationLink } from '../db/index.js';
 import crypto from 'crypto';
+import { exec } from 'child_process';
 
 import { getCUSDBalance, sendCUSD, splitEqualOnChain, generateWallet, waitForTransaction, getExplorerUrl, getCELOBalance, sendCELO, runFaucet } from '../services/celo.js';
 import { generateReceiptPNG, generateReceiptPDF } from '../services/receipt.js';
@@ -965,6 +966,7 @@ router.get('/self/status/:telegramId', async (req, res) => {
         message: 'Verification session expired. Please type /start in the bot to get a new verification link.'
       });
     }
+
   } catch (err) {
     console.error('Error in Self status check:', err);
     // Last-resort fallback: check DB state
@@ -1071,3 +1073,20 @@ router.get('/self/session/:sessionToken', (req, res) => {
 });
 
 export default router;
+
+
+// Auto-deploy webhook
+router.post('/deploy', (req, res) => {
+  const sig = req.headers['x-hub-signature-256'];
+  const secret = process.env.WEBHOOK_SECRET || 'zapp-webhook';
+  const rawBody = req.rawBody || JSON.stringify(req.body) || '';
+  const expected = 'sha256=' + crypto.createHmac('sha256', secret).update(rawBody).digest('hex');
+  if (!sig || sig !== expected) {
+    return res.status(403).send('Forbidden');
+  }
+  res.send('Deploying');
+  exec('/home/afric/deploy.sh', (err, stdout) => {
+    if (err) console.error('Deploy error:', err.message);
+    console.log(stdout);
+  });
+}); // webhook-deploy
