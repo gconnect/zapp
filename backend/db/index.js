@@ -36,8 +36,8 @@ export function upsertUser({ telegramId, telegramUsername, telegramName }) {
     INSERT INTO users (telegram_id, telegram_username, telegram_name)
     VALUES (?, ?, ?)
     ON CONFLICT(telegram_id) DO UPDATE SET
-      telegram_username = excluded.telegram_username,
-      telegram_name = excluded.telegram_name,
+      telegram_username = CASE WHEN excluded.telegram_username IS NOT NULL THEN excluded.telegram_username ELSE telegram_username END,
+      telegram_name = CASE WHEN excluded.telegram_name IS NOT NULL THEN excluded.telegram_name ELSE telegram_name END,
       last_active = CURRENT_TIMESTAMP
   `).run(telegramId, telegramUsername || null, telegramName || null);
 
