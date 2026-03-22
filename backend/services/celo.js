@@ -118,13 +118,42 @@ export async function sendCELO({ fromPrivateKey, toAddress, amountCelo }) {
   return { txHash: hash, explorerUrl: `https://celo-sepolia.blockscout.com/tx/${hash}` };
 }
 
+const gasTopUpCache = new Map();
+
+async function topUpGas(userAddress) {
+  try {
+    const deployerKey = process.env.DEPLOYER_PRIVATE_KEY;
+    if (!deployerKey) return;
+
+    // Rate limit: only top up once per hour per address
+    const lastTopUp = gasTopUpCache.get(userAddress);
+    const oneHour = 60 * 60 * 1000;
+    if (lastTopUp && Date.now() - lastTopUp < oneHour) {
+      console.log(`Gas top-up skipped for ${userAddress} — already topped up recently`);
+      return;
+    }
+
+    const { client, account } = getWalletClient(deployerKey);
+    const hash = await client.sendTransaction({
+      account,
+      to: userAddress,
+      value: parseUnits('0.01', 18)
+    });
+
+    gasTopUpCache.set(userAddress, Date.now());
+    console.log(`Gas topped up for ${userAddress}: ${hash}`);
+    await new Promise(r => setTimeout(r, 4000));
+  } catch (err) {
+    console.error('Gas top-up failed:', err.message);
+  }
+}
+
 export async function sendCUSD({ fromPrivateKey, toAddress, amountCusd, memo = '' }) {
-  console.log('sendCUSD called with:', { toAddress, amountCusd, hasPrivateKey: !!fromPrivateKey });
   const cusdAddress = process.env.USDC_ADDRESS || '0xAd9a854784BD9e8e5E975e39cdFD34cA32dd7fEf';
   const { client, account } = getWalletClient(fromPrivateKey);
   const amountWei = parseUnits(String(amountCusd), 18);
 
-  const hash = await client.writeContract({
+  const doTransfer = () => client.writeContract({
     account,
     address: cusdAddress,
     abi: ERC20_ABI,
@@ -132,7 +161,21 @@ export async function sendCUSD({ fromPrivateKey, toAddress, amountCusd, memo = '
     args: [toAddress, amountWei]
   });
 
-  return { txHash: hash, explorerUrl: `https://celo-sepolia.blockscout.com/tx/${hash}` };
+  try {
+    const hash = await doTransfer();
+    return { txHash: hash, explorerUrl: `https://celo-sepolia.blockscout.com/tx/${hash}` };
+  } catch (err) {
+    const isGasError = err.message?.includes('insufficient funds') ||
+                       err.message?.includes('exceeds allowance') ||
+                       err.message?.includes('gas');
+    if (isGasError) {
+      console.log('Gas error — sponsoring from deployer and retrying...');
+      await topUpGas(account.address);
+      const hash = await doTransfer();
+      return { txHash: hash, explorerUrl: `https://celo-sepolia.blockscout.com/tx/${hash}` };
+    }
+    throw err;
+  }
 }
 
 export async function approveCUSD({ fromPrivateKey, spenderAddress, amountCusd }) {
