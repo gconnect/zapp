@@ -9,12 +9,11 @@ import crypto from 'crypto';
 import { exec } from 'child_process';
 
 import { getCUSDBalance, sendCUSD, splitEqualOnChain, generateWallet, waitForTransaction, getExplorerUrl, getCELOBalance, sendCELO, runFaucet } from '../services/celo.js';
-import { generateReceiptPNG, generateReceiptPDF } from '../services/receipt.js';
 import { createCircle, joinCircle, contribute, getCircleStatus, getUserCircles } from '../services/esusu.js';
 import {
-  getDB, upsertUser, getUserByTelegramId, getUserByUsername,
+  getDB, upsertUser, getUserByTelegramId, getUserByUsername, getAllUsers,
   setUserWallet, createTransaction, confirmTransaction, failTransaction,
-  getTransactions, flagUser, resolveAlias, saveAlias, setUserVerified, checkFaucetRateLimit, updateFaucetRequest
+  getTransactions, getUserTransactions, flagUser, deleteUser, resolveAlias, saveAlias, setUserVerified, checkFaucetRateLimit, updateFaucetRequest, getAllCircles
 } from '../db/index.js';
 import {
   initiateSelfVerification,
@@ -699,16 +698,28 @@ router.get('/admin/transactions', adminAuth, async (req, res) => {
 
 router.get('/admin/users', adminAuth, (req, res) => {
   try {
-    res.json({ message: 'Use /admin/stats for summary' });
+    const limit = parseInt(req.query.limit) || 100;
+    const offset = parseInt(req.query.offset) || 0;
+    const users = getAllUsers(limit, offset);
+    res.json({ users, count: users.length });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-router.post('/admin/users/:username/flag', adminAuth, (req, res) => {
+router.post('/admin/users/:telegramId/flag', adminAuth, (req, res) => {
   try {
-    flagUser(req.params.username);
-    res.json({ success: true, message: `User @${req.params.username} flagged` });
+    flagUser(req.params.telegramId);
+    res.json({ success: true, message: `User ${req.params.telegramId} flagged` });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.delete('/admin/users/:telegramId', adminAuth, (req, res) => {
+  try {
+    deleteUser(req.params.telegramId);
+    res.json({ success: true, message: `User ${req.params.telegramId} deleted` });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -716,8 +727,19 @@ router.post('/admin/users/:username/flag', adminAuth, (req, res) => {
 
 router.get('/admin/circles', adminAuth, async (req, res) => {
   try {
-    const circles = await getUserCircles('all'); // returns all
+    const circles = getAllCircles();
     res.json(circles);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.get('/admin/users/:telegramId/transactions', adminAuth, (req, res) => {
+  try {
+    const user = getUserByTelegramId(req.params.telegramId);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    const txs = getUserTransactions(user.id, 50); // Get latest 50 txs for user
+    res.json({ transactions: txs });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -753,7 +775,7 @@ router.post('/admin/verify/:telegramId', adminAuth, (req, res) => {
       return res.json({ message: 'User is already verified', telegramId });
     }
 
-    setUserVerified(telegramId, 'admin-manual-verify');
+    setUserVerified(telegramId, `admin-manual-verify-${telegramId}`);
     res.json({ success: true, message: `User ${telegramId} marked as verified`, telegramId });
   } catch (err) {
     console.error('Admin verify error:', err);

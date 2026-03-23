@@ -60,11 +60,16 @@ app.get('/health', (req, res) => {
   });
 });
 
+// ─── Admin Dashboard ────────────────────────────────────────────────────────────
+app.get('/admin', (req, res) => {
+  res.sendFile(path.join(__dirname, '../frontend/admin.html'));
+});
+
 // ─── Admin Stats Endpoint ─────────────────────────────────────────────────────
 app.get('/admin/stats', (req, res) => {
   // Simple auth check
   const adminKey = req.headers['x-admin-key'];
-  if (adminKey !== process.env.ADMIN_SECRET && process.env.NODE_ENV === 'production') {
+  if (process.env.NODE_ENV !== 'test' && adminKey !== process.env.ADMIN_SECRET) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
@@ -88,8 +93,17 @@ app.get('/admin/stats', (req, res) => {
       circles: {
         total: db.prepare('SELECT COUNT(*) as n FROM esusu_circles').get().n,
         active: db.prepare("SELECT COUNT(*) as n FROM esusu_circles WHERE status = 'active'").get().n
-      }
+      },
+      recent_transactions: db.prepare(`
+        SELECT t.tx_hash, t.tx_type, t.amount_cusd, t.status, t.created_at,
+               u1.telegram_username as from_username, u2.telegram_username as to_username
+        FROM transactions t
+        LEFT JOIN users u1 ON t.from_user_id = u1.id
+        LEFT JOIN users u2 ON t.to_user_id = u2.id
+        ORDER BY t.created_at DESC LIMIT 5
+      `).all()
     };
+    
     res.json(stats);
   } catch (err) {
     res.status(500).json({ error: err.message });

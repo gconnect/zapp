@@ -69,8 +69,20 @@ export function setUserVerified(telegramId, nullifier) {
   `).run(nullifier, telegramId);
 }
 
+export function getAllUsers(limit = 100, offset = 0) {
+  return getDB().prepare(`
+    SELECT * FROM users 
+    ORDER BY last_active DESC 
+    LIMIT ? OFFSET ?
+  `).all(limit, offset);
+}
+
 export function flagUser(telegramId) {
   return getDB().prepare('UPDATE users SET flagged = 1 WHERE telegram_id = ?').run(telegramId);
+}
+
+export function deleteUser(telegramId) {
+  return getDB().prepare('DELETE FROM users WHERE telegram_id = ?').run(telegramId);
 }
 
 // ─── Transaction Operations ──────────────────────────────────────────────────
@@ -116,6 +128,20 @@ export function getTransactions({ period = 'today', status = null, limit = 50 } 
   params.push(limit);
 
   return db.prepare(query).all(...params);
+}
+
+export function getUserTransactions(userId, limit = 50) {
+  return getDB().prepare(`
+    SELECT t.*, 
+           u1.telegram_username as from_username,
+           u2.telegram_username as to_username
+    FROM transactions t
+    LEFT JOIN users u1 ON t.from_user_id = u1.id
+    LEFT JOIN users u2 ON t.to_user_id = u2.id
+    WHERE t.from_user_id = ? OR t.to_user_id = ?
+    ORDER BY t.created_at DESC 
+    LIMIT ?
+  `).all(userId, userId, limit);
 }
 
 export function getUnnotifiedLargeTx(threshold = 500) {
