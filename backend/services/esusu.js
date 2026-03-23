@@ -7,18 +7,23 @@ import { contributeToCircle, waitForTransaction } from './celo.js';
 
 // ─── Create Circle ────────────────────────────────────────────────────────────
 
-export async function createCircle({ adminTelegramId, name, contributionCusd, intervalDays, maxMembers, telegramGroupId }) {
+export async function createCircle({ adminTelegramId, name, contributionCusd, intervalDays, intervalMinutes, maxMembers, telegramGroupId }) {
   const admin = db.getUserByTelegramId(adminTelegramId);
   if (!admin) throw new Error('Admin user not found');
 if (!admin.self_verified) {
   throw new Error('Identity verification required. Please complete Self verification before creating a circle.');
 }
+  // intervalMinutes is for testing only — converts minutes to fractional days
+  const resolvedIntervalDays = intervalMinutes
+    ? intervalMinutes / (60 * 24)
+    : (intervalDays || 30);
+
   const circleId = db.createCircle({
     name,
     adminUserId: admin.id,
     telegramGroupId,
     contributionCusd,
-    intervalDays: intervalDays || 30,
+    intervalDays: resolvedIntervalDays,
     maxMembers
   });
 
@@ -72,7 +77,7 @@ export async function contribute({ telegramId, circleId }) {
 
   let txHash = null;
 
-  // If contract is deployed, use on-chain contribution
+  // If contract is deployed with circle ID, use on-chain contribution
   if (process.env.ESUSU_CIRCLE_ADDRESS && circle.contract_circle_id) {
     const result = await contributeToCircle({
       fromPrivateKey: user.wallet_private_key,
@@ -81,6 +86,16 @@ export async function contribute({ telegramId, circleId }) {
     });
     txHash = result.txHash;
     await waitForTransaction(txHash);
+  } else if (process.env.ESUSU_CIRCLE_ADDRESS) {
+    // Fallback — send USDC directly to esusu contract as escrow
+    const { sendCUSD } = await import('./celo.js');
+    const result = await sendCUSD({
+      fromPrivateKey: user.wallet_private_key,
+      toAddress: process.env.ESUSU_CIRCLE_ADDRESS,
+      amountCusd: circle.contribution_cusd,
+      memo: `esusu-circle-${circleId}-round-${round}`
+    });
+    txHash = result.txHash;
   }
 
   // Record in DB
