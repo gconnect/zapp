@@ -97,6 +97,11 @@
                             </tbody>
                         </table>
                     </div>
+                    <div class="pagination">
+                        <button id="overview-tx-prev" class="btn btn-outline" disabled>Previous</button>
+                        <span id="overview-tx-page-info">Page 1 of 1</span>
+                        <button id="overview-tx-next" class="btn btn-outline" disabled>Next</button>
+                    </div>
                 </div>
 
                 <!-- Users Tab -->
@@ -117,6 +122,11 @@
                                 <tr><td colspan="6" class="text-center py-4">Loading users...</td></tr>
                             </tbody>
                         </table>
+                    </div>
+                    <div class="pagination">
+                        <button id="users-prev" class="btn btn-outline" disabled>Previous</button>
+                        <span id="users-page-info">Page 1 of 1</span>
+                        <button id="users-next" class="btn btn-outline" disabled>Next</button>
                     </div>
                 </div>
 
@@ -140,6 +150,11 @@
                             </tbody>
                         </table>
                     </div>
+                    <div class="pagination">
+                        <button id="tx-prev" class="btn btn-outline" disabled>Previous</button>
+                        <span id="tx-page-info">Page 1 of 1</span>
+                        <button id="tx-next" class="btn btn-outline" disabled>Next</button>
+                    </div>
                 </div>
 
                 <!-- Circles Tab -->
@@ -148,6 +163,7 @@
                         <table class="data-table">
                             <thead>
                                 <tr>
+                                    <th>ID</th>
                                     <th>Name</th>
                                     <th>Admin ID</th>
                                     <th>Contribution (USDC)</th>
@@ -158,9 +174,14 @@
                                 </tr>
                             </thead>
                             <tbody id="circles-table-body">
-                                <tr><td colspan="7" class="text-center py-4">Loading circles...</td></tr>
+                                <tr><td colspan="8" class="text-center py-4">Loading circles...</td></tr>
                             </tbody>
                         </table>
+                    </div>
+                    <div class="pagination">
+                        <button id="circles-prev" class="btn btn-outline" disabled>Previous</button>
+                        <span id="circles-page-info">Page 1 of 1</span>
+                        <button id="circles-next" class="btn btn-outline" disabled>Next</button>
                     </div>
                 </div>
             </div>

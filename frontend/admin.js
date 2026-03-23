@@ -35,16 +35,35 @@ document.addEventListener('DOMContentLoaded', () => {
     // Pagination State
     let overviewTxPage = 1;
     let txPage = 1;
+    let usersPage = 1;
+    let circlesPage = 1;
+
+    const parseSqlDate = (dateStr) => {
+        if (!dateStr || dateStr === '-') return null;
+        try {
+            return new Date(dateStr.replace(' ', 'T') + 'Z');
+        } catch(e) { return null; }
+    };
 
     // Overview Pagination Elements
-    const overviewPrevBtn = document.getElementById('overview-prev-btn');
-    const overviewNextBtn = document.getElementById('overview-next-btn');
-    const overviewPageInfo = document.getElementById('overview-page-info');
+    const overviewPrevBtn = document.getElementById('overview-tx-prev');
+    const overviewNextBtn = document.getElementById('overview-tx-next');
+    const overviewPageInfo = document.getElementById('overview-tx-page-info');
 
     // Transactions Pagination Elements
-    const txPrevBtn = document.getElementById('tx-prev-btn');
-    const txNextBtn = document.getElementById('tx-next-btn');
+    const txPrevBtn = document.getElementById('tx-prev');
+    const txNextBtn = document.getElementById('tx-next');
     const txPageInfo = document.getElementById('tx-page-info');
+
+    // Users Pagination Elements
+    const usersPrevBtn = document.getElementById('users-prev');
+    const usersNextBtn = document.getElementById('users-next');
+    const usersPageInfo = document.getElementById('users-page-info');
+
+    // Circles Pagination Elements
+    const circlesPrevBtn = document.getElementById('circles-prev');
+    const circlesNextBtn = document.getElementById('circles-next');
+    const circlesPageInfo = document.getElementById('circles-page-info');
     const txPeriodFilter = document.getElementById('tx-period-filter');
     const txStatusFilter = document.getElementById('tx-status-filter');
 
@@ -89,9 +108,24 @@ document.addEventListener('DOMContentLoaded', () => {
             
             if (tabId === 'overview') overviewTxPage = 1;
             if (tabId === 'transactions') txPage = 1;
+            if (tabId === 'users') usersPage = 1;
+            if (tabId === 'circles') circlesPage = 1;
             loadActiveTab();
         });
     });
+
+    // Pagination Handlers
+    if(overviewPrevBtn) overviewPrevBtn.addEventListener('click', () => { if(overviewTxPage > 1) { overviewTxPage--; fetchOverview(); } });
+    if(overviewNextBtn) overviewNextBtn.addEventListener('click', () => { overviewTxPage++; fetchOverview(); });
+
+    if(txPrevBtn) txPrevBtn.addEventListener('click', () => { if(txPage > 1) { txPage--; fetchTransactions(); } });
+    if(txNextBtn) txNextBtn.addEventListener('click', () => { txPage++; fetchTransactions(); });
+
+    if(usersPrevBtn) usersPrevBtn.addEventListener('click', () => { if(usersPage > 1) { usersPage--; fetchUsers(); } });
+    if(usersNextBtn) usersNextBtn.addEventListener('click', () => { usersPage++; fetchUsers(); });
+
+    if(circlesPrevBtn) circlesPrevBtn.addEventListener('click', () => { if(circlesPage > 1) { circlesPage--; fetchCircles(); } });
+    if(circlesNextBtn) circlesNextBtn.addEventListener('click', () => { circlesPage++; fetchCircles(); });
 
     // Modal Handlers
     confirmCancelBtn.addEventListener('click', () => {
@@ -194,7 +228,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function fetchUsers() {
         try {
-            const res = await apiCall('/admin/users');
+            const limit = 50;
+            const res = await apiCall(`/admin/users?page=${usersPage}&limit=${limit}`);
             if (res && res.users) {
                 const tbody = document.getElementById('users-table-body');
                 tbody.innerHTML = '';
@@ -294,6 +329,12 @@ document.addEventListener('DOMContentLoaded', () => {
                         });
                     });
                 });
+
+                // Update Pagination Controls
+                const totalPages = Math.ceil((res.total || res.count) / limit) || 1;
+                if (usersPageInfo) usersPageInfo.textContent = `Page ${usersPage} of ${totalPages}`;
+                if (usersPrevBtn) usersPrevBtn.disabled = usersPage <= 1;
+                if (usersNextBtn) usersNextBtn.disabled = usersPage >= totalPages;
             }
         } catch(e) {}
     }
@@ -322,7 +363,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             <td class="code-mono" title="${tx.to_address || ''}">${truncateWallet(tx.to_address)}</td>
                             <td style="font-weight:600;">${tx.amount_cusd}</td>
                             <td><span class="badge ${statusClass}">${tx.status}</span></td>
-                            <td style="color:var(--text-muted); font-size:12px;">${new Date(tx.created_at).toLocaleString()}</td>
+                            <td style="color:var(--text-muted); font-size:12px;">${parseSqlDate(tx.created_at)?.toLocaleString() || '-'}</td>
                         `;
                         tbody.appendChild(tr);
                     });
@@ -339,26 +380,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function fetchCircles() {
         try {
-            const res = await apiCall('/admin/circles');
-            if (res) {
+            const limit = 50;
+            const res = await apiCall(`/admin/circles?page=${circlesPage}&limit=${limit}`);
+            if (res && res.circles) {
                 const tbody = document.getElementById('circles-table-body');
                 tbody.innerHTML = '';
-                if(res.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4">No circles found.</td></tr>';
+                if(res.circles.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="8" class="text-center py-4">No circles found.</td></tr>';
                     return;
                 }
                 
-                res.forEach(c => {
+                res.circles.forEach(c => {
                     const tr = document.createElement('tr');
                     const statusClass = c.status === 'active' ? 'success' : 'neutral';
                     tr.innerHTML = `
+                        <td class="code-mono">${c.id}</td>
                         <td style="font-weight:600;">${c.name}</td>
-                        <td class="code-mono">${c.admin_user_id}</td>
+                        <td class="code-mono">${c.admin_username ? '@'+c.admin_username : (c.admin_name || c.admin_user_id)}</td>
                         <td>${c.contribution_cusd}</td>
                         <td>${c.interval_days}</td>
                         <td>${c.max_members}</td>
                         <td><span class="badge ${statusClass}">${c.status}</span></td>
-                        <td style="color:var(--text-muted); font-size:12px;">${c.end_date ? new Date(c.end_date).toLocaleDateString() : '-'}</td>
+                        <td style="color:var(--text-muted); font-size:12px;">${c.end_date ? parseSqlDate(c.end_date)?.toLocaleDateString() : '-'}</td>
                     `;
                     
                     tr.style.cursor = 'pointer';
@@ -366,6 +409,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     
                     tbody.appendChild(tr);
                 });
+
+                // Update Pagination Controls
+                const totalPages = Math.ceil((res.total || res.count) / limit) || 1;
+                if (circlesPageInfo) circlesPageInfo.textContent = `Page ${circlesPage} of ${totalPages}`;
+                if (circlesPrevBtn) circlesPrevBtn.disabled = circlesPage <= 1;
+                if (circlesNextBtn) circlesNextBtn.disabled = circlesPage >= totalPages;
             }
         } catch(e) {}
     }
@@ -391,8 +440,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div><strong>Contribution:</strong> <span style="font-weight:600;">$${circle.contribution_cusd.toFixed(2)}</span> / ${circle.interval_days} days</div>
                 <div><strong>Status:</strong> <span class="badge ${circle.status === 'active' ? 'success' : 'neutral'}">${circle.status}</span></div>
                 <div><strong>Members:</strong> ${members.length} / ${circle.max_members}</div>
-                <div><strong>Created:</strong> ${new Date(circle.created_at).toLocaleDateString()}</div>
-                <div><strong>End Date:</strong> ${circle.end_date ? new Date(circle.end_date).toLocaleDateString() : '-'}</div>
+                <div><strong>Created:</strong> ${parseSqlDate(circle.created_at)?.toLocaleDateString() || '-'}</div>
+                <div><strong>End Date:</strong> ${circle.end_date ? parseSqlDate(circle.end_date)?.toLocaleDateString() : '-'}</div>
+                
+                <div style="margin-top:12px; padding-top:12px; border-top:1px solid var(--border);">
+                    <div style="display:flex; gap:8px; align-items:center;">
+                        <strong>Action:</strong>
+                        ${circle.status === 'active' ? `
+                            <button class="btn btn-outline" style="border-color:var(--danger); color:var(--danger); padding:4px 8px; font-size:12px;" onclick="window.updateCircleStatus(${circle.id}, 'suspended')">Suspend Circle</button>
+                        ` : ''}
+                        ${circle.status === 'suspended' ? `
+                            <button class="btn btn-outline" style="border-color:var(--success); color:var(--success); padding:4px 8px; font-size:12px;" onclick="window.updateCircleStatus(${circle.id}, 'active')">Reactivate Circle</button>
+                        ` : ''}
+                    </div>
+                </div>
             `;
 
             if(members.length === 0) {
@@ -425,6 +486,29 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- Helpers ---
+
+    window.updateCircleStatus = async (circleId, status) => {
+        showConfirm(
+            status === 'suspended' ? 'Suspend Circle' : 'Reactivate Circle',
+            `Are you sure you want to change circle ${circleId} status to ${status}?`,
+            status === 'suspended',
+            async () => {
+                try {
+                    const res = await apiCall(`/admin/circles/${circleId}/status`, 'PUT', { status });
+                    if (res && res.success) {
+                        showToast(`Circle ${status} successfully`);
+                        // Refresh both the modal and the underlaying table
+                        showCircleDetails(circleId);
+                        fetchCircles();
+                    } else {
+                        showToast(res?.error || 'Failed to update circle', true);
+                    }
+                } catch(e) {
+                    showToast('Connection error', true);
+                }
+            }
+        );
+    };
 
     async function apiCall(endpoint, method = 'GET', body = null) {
         if (!adminKey) return null;
@@ -499,7 +583,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <td class="code-mono">${tx.to_username ? '@'+tx.to_username : truncateWallet(tx.to_address)}</td>
                         <td style="font-weight:600;">${tx.amount_cusd}</td>
                         <td><span class="badge ${statusClass}">${tx.status}</span></td>
-                        <td style="color:var(--text-muted); font-size:12px;">${new Date(tx.created_at).toLocaleString()}</td>
+                        <td style="color:var(--text-muted); font-size:12px;">${parseSqlDate(tx.created_at)?.toLocaleString() || '-'}</td>
                     `;
                     tbody.appendChild(tr);
                 });

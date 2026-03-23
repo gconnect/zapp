@@ -1,0 +1,12 @@
+<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="bg" cx="40%" cy="35%" r="65%">
+      <stop offset="0%" stop-color="#2EE87A"/>
+      <stop offset="100%" stop-color="#1AB558"/>
+    </radialGradient>
+  </defs>
+
+  <circle cx="100" cy="100" r="82" fill="url(#bg)" style="stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, &quot;system-ui&quot;, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+
+  <text x="100" y="130" font-family="-apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif" font-size="116" font-weight="900" fill="#0A2E1A" text-anchor="middle" letter-spacing="-6" style="fill:rgb(10, 46, 26);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:-apple-system, &quot;system-ui&quot;, &quot;Helvetica Neue&quot;, Arial, sans-serif;font-size:116px;font-weight:900;text-anchor:middle;dominant-baseline:auto">Z</text>
+</svg>

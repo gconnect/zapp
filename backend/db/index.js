@@ -183,12 +183,19 @@ export function getCircle(circleId) {
   return getDB().prepare('SELECT * FROM esusu_circles WHERE id = ?').get(circleId);
 }
 
-export function getAllCircles() {
+export function getAllCircles(limit = 100, offset = 0) {
   return getDB().prepare(`
-    SELECT *, datetime(created_at, '+' || (interval_days * max_members) || ' days') as end_date
-    FROM esusu_circles 
-    ORDER BY created_at DESC
-  `).all();
+    SELECT c.*, datetime(c.created_at, '+' || (c.interval_days * c.max_members) || ' days') as end_date,
+           u.telegram_username as admin_username, u.telegram_name as admin_name
+    FROM esusu_circles c
+    LEFT JOIN users u ON c.admin_user_id = u.id
+    ORDER BY c.created_at DESC
+    LIMIT ? OFFSET ?
+  `).all(limit, offset);
+}
+
+export function getAllCirclesCount() {
+  return getDB().prepare('SELECT COUNT(*) as n FROM esusu_circles').get().n;
 }
 
 export function getCircleDetailsAdmin(circleId) {

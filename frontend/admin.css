@@ -398,3 +398,18 @@ h1, h2, h3 {
 .toast.show {
   bottom: 40px;
 }
+
+/* Pagination */
+.pagination {
+  margin-top: 24px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+}
+
+.pagination span {
+  font-size: 14px;
+  color: var(--text-muted);
+  font-weight: 500;
+}

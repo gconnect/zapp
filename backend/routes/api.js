@@ -13,7 +13,7 @@ import { createCircle, joinCircle, contribute, getCircleStatus, getUserCircles }
 import {
   getDB, upsertUser, getUserByTelegramId, getUserByUsername, getAllUsers,
   setUserWallet, createTransaction, confirmTransaction, failTransaction,
-  getTransactions, getTransactionsCount, getUserTransactions, flagUser, deleteUser, resolveAlias, saveAlias, setUserVerified, checkFaucetRateLimit, updateFaucetRequest, getAllCircles, getCircleDetailsAdmin
+  getTransactions, getTransactionsCount, getUserTransactions, flagUser, deleteUser, resolveAlias, saveAlias, setUserVerified, checkFaucetRateLimit, updateFaucetRequest, getAllCircles, getCircleDetailsAdmin, getAllCirclesCount
 } from '../db/index.js';
 import {
   initiateSelfVerification,
@@ -733,8 +733,14 @@ router.delete('/admin/users/:telegramId', adminAuth, (req, res) => {
 
 router.get('/admin/circles', adminAuth, async (req, res) => {
   try {
-    const circles = getAllCircles();
-    res.json(circles);
+    const limit = parseInt(req.query.limit) || 50;
+    const offset = parseInt(req.query.offset) || 0;
+    const page = parseInt(req.query.page) || 1;
+    const calcOffset = offset || ((page - 1) * limit);
+
+    const circles = getAllCircles(limit, calcOffset);
+    const total = getAllCirclesCount();
+    res.json({ circles, count: circles.length, total });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -745,6 +751,20 @@ router.get('/admin/circles/:circleId', adminAuth, (req, res) => {
     const details = getCircleDetailsAdmin(req.params.circleId);
     if (!details) return res.status(404).json({ error: 'Circle not found' });
     res.json(details);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.put('/admin/circles/:circleId/status', adminAuth, async (req, res) => {
+  try {
+    const { status } = req.body;
+    if (!['active', 'completed', 'suspended'].includes(status)) {
+      return res.status(400).json({ error: 'Invalid status' });
+    }
+    const success = await updateCircleStatus(req.params.circleId, status);
+    if (!success) return res.status(404).json({ error: 'Circle not found or no changes made' });
+    res.json({ success: true, status });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
