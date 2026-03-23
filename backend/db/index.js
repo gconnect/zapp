@@ -104,27 +104,50 @@ export function failTransaction(txHash) {
   return getDB().prepare(`UPDATE transactions SET status = 'failed' WHERE tx_hash = ?`).run(txHash);
 }
 
-export function getTransactions({ period = 'all', status = null, limit = 50, offset = 0 } = {}) {
-  const db = getDB();
-  let query = `
-    SELECT t.*, 
-           u1.telegram_username as from_username,
-           u2.telegram_username as to_username
+export const TX_CTE = `
+  WITH all_txs AS (
+    SELECT t.tx_hash, t.tx_type, t.amount_cusd, t.status, t.created_at,
+           t.from_user_id, t.to_user_id,
+           u1.telegram_username as from_username, u2.telegram_username as to_username,
+           u1.wallet_address as from_address, u2.wallet_address as to_address
     FROM transactions t
     LEFT JOIN users u1 ON t.from_user_id = u1.id
     LEFT JOIN users u2 ON t.to_user_id = u2.id
-    WHERE 1=1
-  `;
+    
+    UNION ALL
+    
+    SELECT ec.tx_hash, 'esusu_contribution' as tx_type, ec.amount_cusd, 'confirmed' as status, ec.paid_at as created_at,
+           ec.user_id as from_user_id, NULL as to_user_id,
+           u.telegram_username as from_username, NULL as to_username,
+           u.wallet_address as from_address, NULL as to_address
+    FROM esusu_contributions ec
+    LEFT JOIN users u ON ec.user_id = u.id
+    
+    UNION ALL
+    
+    SELECT er.tx_hash, 'esusu_payout' as tx_type, er.total_pot as amount_cusd, 'confirmed' as status, er.paid_out_at as created_at,
+           NULL as from_user_id, er.recipient_id as to_user_id,
+           NULL as from_username, u.telegram_username as to_username,
+           NULL as from_address, u.wallet_address as to_address
+    FROM esusu_rounds er
+    LEFT JOIN users u ON er.recipient_id = u.id
+    WHERE er.tx_hash IS NOT NULL
+  )
+`;
+
+export function getTransactions({ period = 'all', status = null, limit = 50, offset = 0 } = {}) {
+  const db = getDB();
+  let query = TX_CTE + ` SELECT * FROM all_txs WHERE 1=1 `;
   const params = [];
 
   if (period === 'today') {
-    query += ` AND t.created_at >= date('now')`;
+    query += ` AND created_at >= date('now')`;
   } else if (period === 'week') {
-    query += ` AND t.created_at >= date('now', '-7 days')`;
+    query += ` AND created_at >= date('now', '-7 days')`;
   }
 
-  if (status) { query += ` AND t.status = ?`; params.push(status); }
-  query += ` ORDER BY t.created_at DESC LIMIT ? OFFSET ?`;
+  if (status) { query += ` AND status = ?`; params.push(status); }
+  query += ` ORDER BY created_at DESC LIMIT ? OFFSET ?`;
   params.push(limit, offset);
 
   return db.prepare(query).all(...params);
@@ -132,7 +155,7 @@ export function getTransactions({ period = 'all', status = null, limit = 50, off
 
 export function getTransactionsCount({ period = 'all', status = null } = {}) {
   const db = getDB();
-  let query = `SELECT COUNT(*) as count FROM transactions WHERE 1=1`;
+  let query = TX_CTE + ` SELECT COUNT(*) as count FROM all_txs WHERE 1=1 `;
   const params = [];
   
   if (period === 'today') {
@@ -146,15 +169,11 @@ export function getTransactionsCount({ period = 'all', status = null } = {}) {
 }
 
 export function getUserTransactions(userId, limit = 50) {
-  return getDB().prepare(`
-    SELECT t.*, 
-           u1.telegram_username as from_username,
-           u2.telegram_username as to_username
-    FROM transactions t
-    LEFT JOIN users u1 ON t.from_user_id = u1.id
-    LEFT JOIN users u2 ON t.to_user_id = u2.id
-    WHERE t.from_user_id = ? OR t.to_user_id = ?
-    ORDER BY t.created_at DESC 
+  return getDB().prepare(TX_CTE + `
+    SELECT *
+    FROM all_txs
+    WHERE from_user_id = ? OR to_user_id = ?
+    ORDER BY created_at DESC 
     LIMIT ?
   `).all(userId, userId, limit);
 }

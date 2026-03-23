@@ -11,7 +11,7 @@ import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-import { initDB } from './db/index.js';
+import { initDB, TX_CTE } from './db/index.js';
 import { runEsusuCron } from './services/esusu-cron.js';
 import verifyRoutes  from './routes/verify.js';
 import receiptRoutes from './routes/receipt.js';
@@ -90,24 +90,20 @@ app.get('/admin/stats', (req, res) => {
         flagged: db.prepare('SELECT COUNT(*) as n FROM users WHERE flagged = 1').get().n
       },
       transactions: {
-        total: db.prepare('SELECT COUNT(*) as n FROM transactions').get().n,
-        today: db.prepare("SELECT COUNT(*) as n FROM transactions WHERE created_at >= date('now')").get().n,
-        failed: db.prepare("SELECT COUNT(*) as n FROM transactions WHERE status = 'failed'").get().n,
-        volume_cusd: db.prepare("SELECT COALESCE(SUM(amount_cusd), 0) as s FROM transactions WHERE status = 'confirmed'").get().s
+        total: db.prepare(TX_CTE + 'SELECT COUNT(*) as n FROM all_txs').get().n,
+        today: db.prepare(TX_CTE + "SELECT COUNT(*) as n FROM all_txs WHERE created_at >= date('now')").get().n,
+        failed: db.prepare(TX_CTE + "SELECT COUNT(*) as n FROM all_txs WHERE status = 'failed'").get().n,
+        volume_cusd: db.prepare(TX_CTE + "SELECT COALESCE(SUM(amount_cusd), 0) as s FROM all_txs WHERE status = 'confirmed'").get().s
       },
       circles: {
         total: db.prepare('SELECT COUNT(*) as n FROM esusu_circles').get().n,
         active: db.prepare("SELECT COUNT(*) as n FROM esusu_circles WHERE status = 'active'").get().n
       },
-      recent_transactions: db.prepare(`
-        SELECT t.tx_hash, t.tx_type, t.amount_cusd, t.status, t.created_at,
-               u1.telegram_username as from_username, u2.telegram_username as to_username
-        FROM transactions t
-        LEFT JOIN users u1 ON t.from_user_id = u1.id
-        LEFT JOIN users u2 ON t.to_user_id = u2.id
-        ORDER BY t.created_at DESC LIMIT ? OFFSET ?
+      recent_transactions: db.prepare(TX_CTE + `
+        SELECT * FROM all_txs
+        ORDER BY created_at DESC LIMIT ? OFFSET ?
       `).all(limit, offset),
-      recent_transactions_total: db.prepare("SELECT COUNT(*) as n FROM transactions").get().n
+      recent_transactions_total: db.prepare(TX_CTE + "SELECT COUNT(*) as n FROM all_txs").get().n
     };
     
     res.json(stats);

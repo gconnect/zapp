@@ -228,7 +228,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function fetchUsers() {
         try {
-            const limit = 50;
+            const limit = 10;
             const res = await apiCall(`/admin/users?page=${usersPage}&limit=${limit}`);
             if (res && res.users) {
                 const tbody = document.getElementById('users-table-body');
@@ -370,7 +370,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 
                 // Update Pagination Controls
-                const totalPages = Math.ceil((res.total || res.count) / 50) || 1;
+                const totalPages = Math.ceil((res.total || res.count) / 10) || 1;
                 if (txPageInfo) txPageInfo.textContent = `Page ${txPage} of ${totalPages}`;
                 if (txPrevBtn) txPrevBtn.disabled = txPage <= 1;
                 if (txNextBtn) txNextBtn.disabled = txPage >= totalPages;
@@ -380,7 +380,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function fetchCircles() {
         try {
-            const limit = 50;
+            const limit = 10;
             const res = await apiCall(`/admin/circles?page=${circlesPage}&limit=${limit}`);
             if (res && res.circles) {
                 const tbody = document.getElementById('circles-table-body');

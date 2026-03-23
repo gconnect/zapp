@@ -688,7 +688,7 @@ function adminAuth(req, res, next) {
 router.get('/admin/transactions', adminAuth, async (req, res) => {
   try {
     const { period = 'all', status, minAmount, page = 1 } = req.query;
-    const limit = 50;
+    const limit = parseInt(req.query.limit) || 10;
     const offset = (parseInt(page) - 1) * limit;
 
     let txs = getTransactions({ period, status, limit, offset });
@@ -704,7 +704,7 @@ router.get('/admin/transactions', adminAuth, async (req, res) => {
 
 router.get('/admin/users', adminAuth, (req, res) => {
   try {
-    const limit = parseInt(req.query.limit) || 100;
+    const limit = parseInt(req.query.limit) || 10;
     const offset = parseInt(req.query.offset) || 0;
     const users = getAllUsers(limit, offset);
     res.json({ users, count: users.length });
@@ -733,7 +733,7 @@ router.delete('/admin/users/:telegramId', adminAuth, (req, res) => {
 
 router.get('/admin/circles', adminAuth, async (req, res) => {
   try {
-    const limit = parseInt(req.query.limit) || 50;
+    const limit = parseInt(req.query.limit) || 10;
     const offset = parseInt(req.query.offset) || 0;
     const page = parseInt(req.query.page) || 1;
     const calcOffset = offset || ((page - 1) * limit);
