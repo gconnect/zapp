@@ -190,7 +190,7 @@ export function recordContribution({ circleId, round, userId, amountCusd, txHash
 
 export function getUnpaidMembers(circleId, round) {
   return getDB().prepare(`
-    SELECT u.telegram_username, u.wallet_address FROM esusu_members em
+    SELECT u.telegram_id, u.telegram_username, u.wallet_address FROM esusu_members em
     JOIN users u ON em.user_id = u.id
     WHERE em.circle_id = ?
     AND em.user_id NOT IN (

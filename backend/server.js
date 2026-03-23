@@ -12,6 +12,7 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 import { initDB } from './db/index.js';
+import { runEsusuCron } from './services/esusu-cron.js';
 import verifyRoutes  from './routes/verify.js';
 import receiptRoutes from './routes/receipt.js';
 import x402Routes   from './routes/x402.js';
@@ -127,7 +128,13 @@ async function start() {
     console.log(`\n╔══════════════════════════════════════════╗`);
     console.log(`║   Zapp Backend Server                 ║`);
     console.log(`╚══════════════════════════════════════════╝`);
-    console.log(`🚀 Running on http://localhost:${PORT}`);
+    console.log(`🚀 Running on http://localhost:${PORT}`)
+    // Esusu cron — runs every minute
+    setInterval(async () => {
+      try { await runEsusuCron(); }
+      catch (err) { console.error('Esusu cron error:', err.message); }
+    }, 60 * 1000);
+    console.log('⏰ Esusu cron started — checking circles every minute');;
     console.log(`🌐 Network:  Celo Sepolia Testnet (chainId 11142220)`);
     console.log(`🗄️  Database: ${process.env.DB_PATH || './db/zapp.sqlite'}`);
     console.log(`\nEndpoints:`);

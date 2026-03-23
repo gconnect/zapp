@@ -30,6 +30,9 @@ if (!admin.self_verified) {
   // Add admin as first member
   db.addCircleMember(circleId, admin.id);
 
+  // Set round start date immediately
+  db.getDB().prepare("UPDATE esusu_circles SET round_start_date = datetime('now') WHERE id = ?").run(circleId);
+
   return { circleId, message: `Circle "${name}" created! Share this ID with members: #${circleId}` };
 }
 
