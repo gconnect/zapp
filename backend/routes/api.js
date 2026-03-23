@@ -13,7 +13,7 @@ import { createCircle, joinCircle, contribute, getCircleStatus, getUserCircles }
 import {
   getDB, upsertUser, getUserByTelegramId, getUserByUsername, getAllUsers,
   setUserWallet, createTransaction, confirmTransaction, failTransaction,
-  getTransactions, getTransactionsCount, getUserTransactions, flagUser, deleteUser, resolveAlias, saveAlias, setUserVerified, checkFaucetRateLimit, updateFaucetRequest, getAllCircles
+  getTransactions, getTransactionsCount, getUserTransactions, flagUser, deleteUser, resolveAlias, saveAlias, setUserVerified, checkFaucetRateLimit, updateFaucetRequest, getAllCircles, getCircleDetailsAdmin
 } from '../db/index.js';
 import {
   initiateSelfVerification,
@@ -735,6 +735,16 @@ router.get('/admin/circles', adminAuth, async (req, res) => {
   try {
     const circles = getAllCircles();
     res.json(circles);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.get('/admin/circles/:circleId', adminAuth, (req, res) => {
+  try {
+    const details = getCircleDetailsAdmin(req.params.circleId);
+    if (!details) return res.status(404).json({ error: 'Circle not found' });
+    res.json(details);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

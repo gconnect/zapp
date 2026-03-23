@@ -184,7 +184,52 @@ export function getCircle(circleId) {
 }
 
 export function getAllCircles() {
-  return getDB().prepare('SELECT * FROM esusu_circles ORDER BY created_at DESC').all();
+  return getDB().prepare(`
+    SELECT *, datetime(created_at, '+' || (interval_days * max_members) || ' days') as end_date
+    FROM esusu_circles 
+    ORDER BY created_at DESC
+  `).all();
+}
+
+export function getCircleDetailsAdmin(circleId) {
+    const db = getDB();
+    const circleRow = db.prepare(`
+        SELECT *, datetime(created_at, '+' || (interval_days * max_members) || ' days') as end_date 
+        FROM esusu_circles WHERE id = ?
+    `).get(circleId);
+    
+    if (!circleRow) return null;
+
+    const members = db.prepare(`
+        SELECT u.id, u.telegram_username, u.telegram_name, u.telegram_id, u.wallet_address, em.joined_at
+        FROM esusu_members em 
+        JOIN users u ON em.user_id = u.id 
+        WHERE em.circle_id = ?
+    `).all(circleId);
+
+    const paidCurrentRound = db.prepare(`
+        SELECT user_id, amount_cusd, tx_hash, paid_at 
+        FROM esusu_contributions 
+        WHERE circle_id = ? AND round = ?
+    `).all(circleId, circleRow.current_round);
+
+    const payouts = db.prepare(`
+        SELECT recipient_id, round_number, total_pot, tx_hash, paid_out_at 
+        FROM esusu_rounds 
+        WHERE circle_id = ? AND recipient_id IS NOT NULL
+    `).all(circleId);
+
+    members.forEach(m => {
+        const payment = paidCurrentRound.find(p => p.user_id === m.id);
+        m.has_paid_current_round = !!payment;
+        m.current_payment = payment || null;
+
+        const payout = payouts.find(p => p.recipient_id === m.id);
+        m.has_claimed = !!payout;
+        m.claimed_payout = payout || null;
+    });
+
+    return { circle: circleRow, members };
 }
 
 export function getCircleMembers(circleId) {

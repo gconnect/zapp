@@ -25,6 +25,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const userModalInfo = document.getElementById('user-modal-info');
     const userModalTxs = document.getElementById('user-modal-txs');
 
+    const circleModal = document.getElementById('circle-modal');
+    const circleModalClose = document.getElementById('circle-modal-close');
+    const circleModalInfo = document.getElementById('circle-modal-info');
+    const circleModalMembers = document.getElementById('circle-modal-members');
+
     let adminKey = localStorage.getItem('zapp_admin_key');
 
     // Pagination State
@@ -115,6 +120,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     userModalClose.addEventListener('click', () => {
         userModal.classList.add('hidden');
+    });
+
+    circleModalClose?.addEventListener('click', () => {
+        circleModal.classList.add('hidden');
     });
 
     async function handleAuth() {
@@ -349,11 +358,70 @@ document.addEventListener('DOMContentLoaded', () => {
                         <td>${c.interval_days}</td>
                         <td>${c.max_members}</td>
                         <td><span class="badge ${statusClass}">${c.status}</span></td>
+                        <td style="color:var(--text-muted); font-size:12px;">${c.end_date ? new Date(c.end_date).toLocaleDateString() : '-'}</td>
                     `;
+                    
+                    tr.style.cursor = 'pointer';
+                    tr.addEventListener('click', () => showCircleDetails(c.id));
+                    
                     tbody.appendChild(tr);
                 });
             }
         } catch(e) {}
+    }
+
+    async function showCircleDetails(circleId) {
+        circleModalInfo.innerHTML = 'Loading circle details...';
+        circleModalMembers.innerHTML = '';
+        circleModal.classList.remove('hidden');
+
+        try {
+            const data = await apiCall(`/admin/circles/${circleId}`);
+            if(!data) {
+                circleModalInfo.innerHTML = '<div style="color:var(--danger)">Failed to load circle data</div>';
+                return;
+            }
+
+            const { circle, members } = data;
+            
+            document.getElementById('circle-modal-title').textContent = circle.name + ` (Round ${circle.current_round})`;
+
+            circleModalInfo.innerHTML = `
+                <div><strong>Admin ID:</strong> <span class="code-mono">${circle.admin_user_id}</span></div>
+                <div><strong>Contribution:</strong> <span style="font-weight:600;">$${circle.contribution_cusd.toFixed(2)}</span> / ${circle.interval_days} days</div>
+                <div><strong>Status:</strong> <span class="badge ${circle.status === 'active' ? 'success' : 'neutral'}">${circle.status}</span></div>
+                <div><strong>Members:</strong> ${members.length} / ${circle.max_members}</div>
+                <div><strong>Created:</strong> ${new Date(circle.created_at).toLocaleDateString()}</div>
+                <div><strong>End Date:</strong> ${circle.end_date ? new Date(circle.end_date).toLocaleDateString() : '-'}</div>
+            `;
+
+            if(members.length === 0) {
+                circleModalMembers.innerHTML = '<tr><td colspan="4" class="text-center py-4">No participants yet</td></tr>';
+            } else {
+                members.forEach(m => {
+                    const tr = document.createElement('tr');
+                    
+                    let paidBadge = m.has_paid_current_round 
+                        ? `<span class="badge success" title="${m.current_payment?.amount_cusd} USDC">Paid</span>`
+                        : `<span class="badge danger">Pending</span>`;
+                        
+                    let claimedBadge = m.has_claimed
+                        ? `<span class="badge success" title="Round ${m.claimed_payout?.round_number}">Yes (R${m.claimed_payout?.round_number})</span>`
+                        : `<span class="badge neutral">No</span>`;
+
+                    tr.innerHTML = `
+                        <td class="code-mono">${m.telegram_username ? '@'+m.telegram_username : m.telegram_name || m.telegram_id}</td>
+                        <td class="code-mono" title="${m.wallet_address || ''}">${truncateWallet(m.wallet_address)}</td>
+                        <td>${paidBadge}</td>
+                        <td>${claimedBadge}</td>
+                    `;
+                    circleModalMembers.appendChild(tr);
+                });
+            }
+        } catch(e) {
+            console.error('Error fetching circle details:', e);
+            circleModalInfo.innerHTML = '<div style="color:var(--danger)">Error loading data</div>';
+        }
     }
 
     // --- Helpers ---
