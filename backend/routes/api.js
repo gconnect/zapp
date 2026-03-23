@@ -614,7 +614,17 @@ router.post('/split/custom', async (req, res) => {
 
 router.post('/esusu/create', async (req, res) => {
   try {
-    const result = await createCircle(req.body);
+    const body = { ...req.body };
+    // Accept fromTelegramId as alias for adminTelegramId
+    if (!body.adminTelegramId && body.fromTelegramId) {
+      body.adminTelegramId = body.fromTelegramId;
+    }
+    // Resolve by username if telegramId missing
+    if (!body.adminTelegramId && body.telegramUsername) {
+      const u = getUserByUsername(body.telegramUsername);
+      if (u) body.adminTelegramId = u.telegram_id;
+    }
+    const result = await createCircle(body);
     res.json(result);
   } catch (err) {
     res.status(400).json({ error: err.message });
@@ -1198,3 +1208,9 @@ router.post('/deploy', (req, res) => {
     console.log(stdout);
   });
 }); // webhook-deploy
+
+router.get('/user/by-username/:username', (req, res) => {
+  const user = getUserByUsername(req.params.username);
+  if (!user) return res.status(404).json({ error: 'User not found' });
+  res.json({ telegram_id: user.telegram_id, telegram_username: user.telegram_username, wallet_address: user.wallet_address });
+});
