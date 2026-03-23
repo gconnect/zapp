@@ -13,7 +13,7 @@ import { createCircle, joinCircle, contribute, getCircleStatus, getUserCircles }
 import {
   getDB, upsertUser, getUserByTelegramId, getUserByUsername, getAllUsers,
   setUserWallet, createTransaction, confirmTransaction, failTransaction,
-  getTransactions, getUserTransactions, flagUser, deleteUser, resolveAlias, saveAlias, setUserVerified, checkFaucetRateLimit, updateFaucetRequest, getAllCircles
+  getTransactions, getTransactionsCount, getUserTransactions, flagUser, deleteUser, resolveAlias, saveAlias, setUserVerified, checkFaucetRateLimit, updateFaucetRequest, getAllCircles
 } from '../db/index.js';
 import {
   initiateSelfVerification,
@@ -687,10 +687,16 @@ function adminAuth(req, res, next) {
 
 router.get('/admin/transactions', adminAuth, async (req, res) => {
   try {
-    const { period = 'today', status, minAmount } = req.query;
-    let txs = getTransactions({ period, status });
+    const { period = 'all', status, minAmount, page = 1 } = req.query;
+    const limit = 50;
+    const offset = (parseInt(page) - 1) * limit;
+
+    let txs = getTransactions({ period, status, limit, offset });
     if (minAmount) txs = txs.filter(t => t.amount_cusd >= parseFloat(minAmount));
-    res.json({ transactions: txs, count: txs.length });
+    
+    // Total count for pagination
+    const totalCount = getTransactions({ period, status, limit: 1000000 }).length; // temporary hack to get total count matching filters, or use getTransactionsCount
+    res.json({ transactions: txs, count: txs.length, total: getTransactionsCount({ period, status }) });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

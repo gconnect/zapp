@@ -104,7 +104,7 @@ export function failTransaction(txHash) {
   return getDB().prepare(`UPDATE transactions SET status = 'failed' WHERE tx_hash = ?`).run(txHash);
 }
 
-export function getTransactions({ period = 'today', status = null, limit = 50 } = {}) {
+export function getTransactions({ period = 'all', status = null, limit = 50, offset = 0 } = {}) {
   const db = getDB();
   let query = `
     SELECT t.*, 
@@ -124,10 +124,25 @@ export function getTransactions({ period = 'today', status = null, limit = 50 } 
   }
 
   if (status) { query += ` AND t.status = ?`; params.push(status); }
-  query += ` ORDER BY t.created_at DESC LIMIT ?`;
-  params.push(limit);
+  query += ` ORDER BY t.created_at DESC LIMIT ? OFFSET ?`;
+  params.push(limit, offset);
 
   return db.prepare(query).all(...params);
+}
+
+export function getTransactionsCount({ period = 'all', status = null } = {}) {
+  const db = getDB();
+  let query = `SELECT COUNT(*) as count FROM transactions WHERE 1=1`;
+  const params = [];
+  
+  if (period === 'today') {
+    query += ` AND created_at >= date('now')`;
+  } else if (period === 'week') {
+    query += ` AND created_at >= date('now', '-7 days')`;
+  }
+
+  if (status) { query += ` AND status = ?`; params.push(status); }
+  return db.prepare(query).get(...params).count;
 }
 
 export function getUserTransactions(userId, limit = 50) {

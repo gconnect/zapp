@@ -27,6 +27,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let adminKey = localStorage.getItem('zapp_admin_key');
 
+    // Pagination State
+    let overviewTxPage = 1;
+    let txPage = 1;
+
+    // Overview Pagination Elements
+    const overviewPrevBtn = document.getElementById('overview-prev-btn');
+    const overviewNextBtn = document.getElementById('overview-next-btn');
+    const overviewPageInfo = document.getElementById('overview-page-info');
+
+    // Transactions Pagination Elements
+    const txPrevBtn = document.getElementById('tx-prev-btn');
+    const txNextBtn = document.getElementById('tx-next-btn');
+    const txPageInfo = document.getElementById('tx-page-info');
+    const txPeriodFilter = document.getElementById('tx-period-filter');
+    const txStatusFilter = document.getElementById('tx-status-filter');
+
     // Init
     if (adminKey) {
         verifyAndLoad();
@@ -57,22 +73,17 @@ document.addEventListener('DOMContentLoaded', () => {
     // Navigation Handlers
     navItems.forEach(item => {
         item.addEventListener('click', (e) => {
-            e.preventDefault();
-            const tabId = item.getAttribute('data-tab');
+            const tabId = e.target.getAttribute('data-tab');
+            pageTitle.textContent = e.target.textContent;
             
-            // Update nav state
             navItems.forEach(nav => nav.classList.remove('active'));
-            item.classList.add('active');
+            e.target.classList.add('active');
             
-            // Update title
-            pageTitle.textContent = item.textContent.trim();
-            
-            // Show corresponding tab
             tabPanes.forEach(pane => pane.classList.remove('active'));
-            const targetPane = document.getElementById(`tab-${tabId}`);
-            if(targetPane) targetPane.classList.add('active');
-
-            // Load data
+            document.getElementById('tab-' + tabId).classList.add('active');
+            
+            if (tabId === 'overview') overviewTxPage = 1;
+            if (tabId === 'transactions') txPage = 1;
             loadActiveTab();
         });
     });
@@ -167,7 +178,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function fetchOverview() {
         renderSkeletons('stats-grid', 4);
         try {
-            const res = await apiCall('/admin/stats');
+            const res = await apiCall(`/admin/stats?page=${overviewTxPage}`);
             if(res) loadOverviewData(res);
         } catch(e) {}
     }
@@ -280,29 +291,39 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function fetchTransactions() {
         try {
-            const res = await apiCall('/admin/transactions?period=all');
+            const period = txPeriodFilter?.value || 'all';
+            const status = txStatusFilter?.value || '';
+            let url = `/admin/transactions?period=${period}&page=${txPage}`;
+            if (status) url += `&status=${status}`;
+
+            const res = await apiCall(url);
             if (res && res.transactions) {
                 const tbody = document.getElementById('tx-table-body');
                 tbody.innerHTML = '';
                 if(res.transactions.length === 0) {
                     tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4">No transactions found.</td></tr>';
-                    return;
+                } else {
+                    res.transactions.forEach(tx => {
+                        const tr = document.createElement('tr');
+                        const statusClass = tx.status === 'confirmed' ? 'success' : (tx.status === 'failed' ? 'danger' : 'neutral');
+                        tr.innerHTML = `
+                            <td class="code-mono"><a href="https://celo-sepolia.blockscout.com/tx/${tx.tx_hash}" target="_blank" style="color:var(--accent);text-decoration:none;">${tx.tx_hash.substring(0,10)}...</a></td>
+                            <td>${tx.tx_type}</td>
+                            <td class="code-mono" title="${tx.from_address || ''}">${truncateWallet(tx.from_address)}</td>
+                            <td class="code-mono" title="${tx.to_address || ''}">${truncateWallet(tx.to_address)}</td>
+                            <td style="font-weight:600;">${tx.amount_cusd}</td>
+                            <td><span class="badge ${statusClass}">${tx.status}</span></td>
+                            <td style="color:var(--text-muted); font-size:12px;">${new Date(tx.created_at).toLocaleString()}</td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
                 }
                 
-                res.transactions.forEach(tx => {
-                    const tr = document.createElement('tr');
-                    const statusClass = tx.status === 'confirmed' ? 'success' : (tx.status === 'failed' ? 'danger' : 'neutral');
-                    tr.innerHTML = `
-                        <td class="code-mono"><a href="https://celo-sepolia.blockscout.com/tx/${tx.tx_hash}" target="_blank" style="color:var(--accent);text-decoration:none;">${tx.tx_hash.substring(0,10)}...</a></td>
-                        <td>${tx.tx_type}</td>
-                        <td class="code-mono" title="${tx.from_address || ''}">${truncateWallet(tx.from_address)}</td>
-                        <td class="code-mono" title="${tx.to_address || ''}">${truncateWallet(tx.to_address)}</td>
-                        <td style="font-weight:600;">${tx.amount_cusd}</td>
-                        <td><span class="badge ${statusClass}">${tx.status}</span></td>
-                        <td style="color:var(--text-muted); font-size:12px;">${new Date(tx.created_at).toLocaleString()}</td>
-                    `;
-                    tbody.appendChild(tr);
-                });
+                // Update Pagination Controls
+                const totalPages = Math.ceil((res.total || res.count) / 50) || 1;
+                if (txPageInfo) txPageInfo.textContent = `Page ${txPage} of ${totalPages}`;
+                if (txPrevBtn) txPrevBtn.disabled = txPage <= 1;
+                if (txNextBtn) txNextBtn.disabled = txPage >= totalPages;
             }
         } catch(e) {}
     }
@@ -398,7 +419,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const tbody = document.getElementById('overview-tx-body');
             tbody.innerHTML = '';
             if (data.recent_transactions.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4">No recent transactions.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4">No recent transactions.</td></tr>';
             } else {
                 data.recent_transactions.forEach(tx => {
                     const tr = document.createElement('tr');
@@ -410,10 +431,16 @@ document.addEventListener('DOMContentLoaded', () => {
                         <td class="code-mono">${tx.to_username ? '@'+tx.to_username : truncateWallet(tx.to_address)}</td>
                         <td style="font-weight:600;">${tx.amount_cusd}</td>
                         <td><span class="badge ${statusClass}">${tx.status}</span></td>
+                        <td style="color:var(--text-muted); font-size:12px;">${new Date(tx.created_at).toLocaleString()}</td>
                     `;
                     tbody.appendChild(tr);
                 });
             }
+            // Update Pagination Controls
+            const totalPages = Math.ceil((data.recent_transactions_total || 0) / 5) || 1;
+            if (overviewPageInfo) overviewPageInfo.textContent = `Page ${overviewTxPage} of ${totalPages}`;
+            if (overviewPrevBtn) overviewPrevBtn.disabled = overviewTxPage <= 1;
+            if (overviewNextBtn) overviewNextBtn.disabled = overviewTxPage >= totalPages;
         }
     }
 
