@@ -89,10 +89,11 @@
                                     <th>To</th>
                                     <th>Amount USDC</th>
                                     <th>Status</th>
+                                    <th>Date</th>
                                 </tr>
                             </thead>
                             <tbody id="overview-tx-body">
-                                <tr><td colspan="6" class="text-center py-4">Loading...</td></tr>
+                                <tr><td colspan="7" class="text-center py-4">Loading...</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -153,10 +154,11 @@
                                     <th>Interval (Days)</th>
                                     <th>Members</th>
                                     <th>Status</th>
+                                    <th>End Date</th>
                                 </tr>
                             </thead>
                             <tbody id="circles-table-body">
-                                <tr><td colspan="6" class="text-center py-4">Loading circles...</td></tr>
+                                <tr><td colspan="7" class="text-center py-4">Loading circles...</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -194,6 +196,28 @@
                 <table class="data-table" style="font-size: 13px;">
                     <thead><tr><th>Hash</th><th>Type</th><th>Amount</th><th>Status</th></tr></thead>
                     <tbody id="user-modal-txs"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Circle Details Modal -->
+    <div id="circle-modal" class="auth-overlay hidden">
+        <div class="auth-box" style="padding: 24px; text-align: left; max-width: 800px; width: 90%;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 16px; margin-bottom: 16px;">
+                <h3 id="circle-modal-title" style="font-size: 20px;">Circle Details</h3>
+                <button id="circle-modal-close" class="btn btn-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+            </div>
+            
+            <div id="circle-modal-info" style="margin-bottom: 24px; display: grid; grid-template-columns: 1fr 1fr; gap: 16px; font-size: 14px;">
+                <!-- Filled via JS -->
+            </div>
+            
+            <h4 style="margin-bottom: 12px; font-size: 16px;">Participants</h4>
+            <div class="table-container" style="max-height: 250px; overflow-y: auto;">
+                <table class="data-table" style="font-size: 13px;">
+                    <thead><tr><th>Username</th><th>Wallet</th><th>Paid Round?</th><th>Claimed?</th></tr></thead>
+                    <tbody id="circle-modal-members"></tbody>
                 </table>
             </div>
         </div>

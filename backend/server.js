@@ -74,6 +74,10 @@ app.get('/admin/stats', (req, res) => {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
+  const page = parseInt(req.query.page) || 1;
+  const limit = 5;
+  const offset = (page - 1) * limit;
+
   try {
     const { getDB } = req.app.locals;
     if (!getDB) return res.json({ message: 'DB not attached to app.locals' });
@@ -101,8 +105,9 @@ app.get('/admin/stats', (req, res) => {
         FROM transactions t
         LEFT JOIN users u1 ON t.from_user_id = u1.id
         LEFT JOIN users u2 ON t.to_user_id = u2.id
-        ORDER BY t.created_at DESC LIMIT 5
-      `).all()
+        ORDER BY t.created_at DESC LIMIT ? OFFSET ?
+      `).all(limit, offset),
+      recent_transactions_total: db.prepare("SELECT COUNT(*) as n FROM transactions").get().n
     };
     
     res.json(stats);
