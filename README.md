@@ -66,6 +66,16 @@ technical knowledge required.
 
 ---
 
+## Screenshot from my Admin Dashboard
+![alt text](<Screenshot 2026-03-24 at 17.37.54.png>)
+
+![alt text](<Screenshot 2026-03-24 at 17.38.09.png>)
+
+![alt text](<Screenshot 2026-03-24 at 17.38.34.png>)
+
+![alt text](<Screenshot 2026-03-24 at 17.38.55.png>)
+
+
 ## Vision
 
 Zapp's mission is to make decentralized payments as natural
