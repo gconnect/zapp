@@ -13,8 +13,7 @@ technical knowledge required.
 [![Network](https://img.shields.io/badge/Network-Celo%20Sepolia-yellow)](https://celo-sepolia.blockscout.com)
 [![Agent](https://img.shields.io/badge/ERC--8004-AgentScan-purple)](https://agentscan.info/agents/74c68262-a2ec-425c-9eb1-d214b450b5b1)
 
-[Verified on Self Agent Registry](https://app.ai.self.xyz/agents/12)
-)
+[![Self Registry](https://img.shields.io/badge/Verified-Self%20Agent%20Registry-blue?logo=data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAyMCAyMCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48Y2lyY2xlIGN4PSIxMCIgY3k9IjEwIiByPSI4IiBmaWxsPSJ3aGl0ZSIvPjxwYXRoIGQ9Im04LjUgMTAuNSAxLjUgMS41IDMtMyIgc3Ryb2tlPSIjMjA4MEZGIiBzdHJva2Utd2lkdGg9IjEuNSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PC9zdmc+)](https://app.ai.self.xyz/agents/12)
 
 ---
 
