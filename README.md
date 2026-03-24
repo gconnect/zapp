@@ -13,6 +13,9 @@ technical knowledge required.
 [![Network](https://img.shields.io/badge/Network-Celo%20Sepolia-yellow)](https://celo-sepolia.blockscout.com)
 [![Agent](https://img.shields.io/badge/ERC--8004-AgentScan-purple)](https://agentscan.info/agents/74c68262-a2ec-425c-9eb1-d214b450b5b1)
 
+[Verified on Self Agent Registry](https://app.ai.self.xyz/agents/12)
+)
+
 ---
 
 ## Features
